@@ -1,0 +1,33 @@
+# JACLang feature plan
+
+- [ ] static typesystem
+  - [ ] type checking
+  - [ ] type sizes
+- [ ] stack variables
+- [ ] assignment, declaration & definition
+- [ ] literal printing
+- [ ] binary expressions
+  - [ ] parentheses
+  - [ ] order of operations
+- [ ] unary expressions
+  - [ ] prefix math
+    - [ ] increment
+    - [ ] decrement
+  - [ ] sign
+    - [ ] negation (-)
+    - [ ] positivisation (+)
+  - [ ] not
+    - [ ] logical not
+    - [ ] bitwise not
+- [ ] scopes
+- [ ] control flow
+  - [ ] while
+  - [ ] for
+  - [ ] if
+    - [ ] elif
+    - [ ] else
+  - [ ] select-case
+- [ ] functions & entry point
+- [ ] float math
+- [ ] boolean math
+- [ ] arrays & pointers
