@@ -6,6 +6,9 @@
 #include "types.h"
 
 static inline u64 FNV_1A(const char* str) {
+
+    if (!str) { return 0ULL; }
+
     u64 hash = 0xcbf29ce484222325;
 
     for (u64 i = 0; i < strlen(str); ++i) {

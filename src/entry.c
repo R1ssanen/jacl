@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "debug_ast.h"
 #include "error.h"
 #include "nodes.h"
 #include "parse.h"
@@ -9,10 +10,8 @@
 #include "tokens.h"
 #include "types.h"
 
-//
-#include "debug_ast.h"
-
 i32 main(i32 argc, char** argv) {
+
     if (argc < 2) {
         fputs("Type jacl --help (or -h) for help.\n", stderr);
         return 1;
@@ -71,7 +70,8 @@ i32 main(i32 argc, char** argv) {
 #endif
 
     jNodeRoot program = { .stmts = malloc(1024 * sizeof(jNodeStmt)) };
-    if ((err = jParse(tokens, token_count, &program))) {
+    jParser   parser  = { .tokens = tokens, .token_count = token_count };
+    if ((err = jParse(&parser, &program))) {
         fputs("Could not parse.\n", stderr);
         return 1;
     }

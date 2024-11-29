@@ -10,7 +10,7 @@ static inline void _jPrintOffset(i32 offset) { fprintf(stderr, "%*s", offset, ""
 
 static inline void _jPrintType(enum j_token_t type, u64 level) {
     _jPrintOffset(level);
-    fprintf(stderr, "type = %s\n", jGetTokenString(type));
+    fprintf(stderr, "type = %s\n", jGetLongTokenString(type));
 }
 
 static inline void _jPrintOp(enum j_token_t op, u64 level) {
@@ -25,7 +25,7 @@ static inline void _jPrintFloat(f64 num, u64 level) {
 
 static inline void _jPrintInt(i64 num, u64 level) {
     _jPrintOffset(level);
-    fprintf(stderr, "int = %li\n", num);
+    fprintf(stderr, "int = %lli\n", num);
 }
 
 static inline void _jPrintStr(const char* str, u64 level) {

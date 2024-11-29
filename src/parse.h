@@ -5,6 +5,16 @@
 #include "nodes.h"
 #include "tokens.h"
 
-enum j_error_t jParse(jToken* tokens, u64 token_count, jNodeRoot* program);
+typedef struct {
+    jToken* tokens;
+    u64     token_count;
+    u64     consumed;
+
+    //  NOTE: TEMPORARY!
+    jNodeStmtInit vars[256];
+    u64           var_count;
+} jParser;
+
+enum j_error_t jParse(jParser* parser, jNodeRoot* program);
 
 #endif

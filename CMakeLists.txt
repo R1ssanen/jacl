@@ -1,23 +1,19 @@
-cmake_minimum_required(VERSION 3.28)
+cmake_minimum_required(VERSION 3.29..3.31)
 project(
   jacl
   VERSION 24.1.0
-  DESCRIPTION "Just Another Compiled Language :-)"
+  DESCRIPTION "Just Another Compiled Language"
   LANGUAGES C)
-
 set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE)
 
-add_executable(${PROJECT_NAME} "src/entry.c" "src/tokenize.c" "src/tokens.c"
-                               "src/parse.c" "src/expr.c")
+set(JACL_LIB ${PROJECT_NAME})
+set(JACL_BIN jaclang)
+set(JACL_TEST_BIN ${PROJECT_NAME}_tests)
 
-set_target_properties(
-  ${PROJECT_NAME}
-  PROPERTIES C_STANDARD 11
-             C_STANDARD_REQUIRED TRUE
-             LINKER_LANGUAGE C
-             VERSION ${PROJECT_VERSION})
+include(CTest)
+enable_testing()
 
-target_include_directories(${PROJECT_NAME} PRIVATE "src/")
-target_compile_options(${PROJECT_NAME} PRIVATE -g -Wall -Wextra -Wpedantic
-                                               -flto=auto)
-target_link_libraries(${PROJECT_NAME} PRIVATE m)
+add_subdirectory(src)
+add_subdirectory(tests)
+
+add_test(NAME JaclangUnitTests COMMAND ${JACL_TEST_BIN})

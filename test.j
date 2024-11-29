@@ -1,9 +1,7 @@
 
-u8: red := 104;
-u8: green := 80;
-u8: blue := 212;
+u8: r := 104;
+u8: g := 80;
+u8: b := 212;
 
-u32: str := f"{red}, {green}, {blue}";
-
-exit 0;
+exit f"{r}, {g}, {b}";
 

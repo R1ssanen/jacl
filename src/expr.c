@@ -1,6 +1,7 @@
 #include "expr.h"
 
 b8 jIsConstExpr(const jNodeExpr* expr) {
+
     switch (expr->has) {
     case JN_EXPR_ID: return !expr->id->mutable;
     case JN_BIN_EXPR: return jIsConstBinExpr(expr->bin_expr);
@@ -11,6 +12,7 @@ b8 jIsConstExpr(const jNodeExpr* expr) {
 }
 
 b8 jIsConstBinExpr(const jNodeBinExpr* bin_expr) {
+
     if (!jIsConstExpr(bin_expr->lhs)) { return false; }
     if (!jIsConstExpr(bin_expr->rhs)) { return false; }
     return true;
@@ -32,6 +34,7 @@ f32 jSolveExpr(const jNodeExpr* expr) {
 }
 
 f32 jSolveBinExpr(const jNodeBinExpr* bin_expr) {
+
     f32 l = jSolveExpr(bin_expr->lhs);
     f32 r = jSolveExpr(bin_expr->rhs);
 

@@ -9,7 +9,7 @@
 #include "tokens.h"
 #include "types.h"
 
-static _jOpInfo _J_OPINFOS[] = {
+_jOpInfo _J_OPINFOS[] = {
     [JT_OP_OR]  = { J_ASSOC_LEFT, 0 },
     [JT_OP_AND] = { J_ASSOC_LEFT, 1 }
 
@@ -27,11 +27,11 @@ static _jOpInfo _J_OPINFOS[] = {
 
 enum j_error_t jTokenize(const char* src, u64 src_len, jToken* tokens, u64* token_count) {
 
-    u64 line   = 0;
-    b8  hashed = false;
+    jPrehashLongTokens();
+    u64 line = 0;
 
     for (u64 i = 0; i < src_len; ++i) {
-        enum j_token_t type = jTryGetToken(src + i, &hashed);
+        enum j_token_t type = jTryGetShortToken(src[i]);
 
         if (src[i] == '\n') {
             ++line;
@@ -63,22 +63,6 @@ enum j_error_t jTokenize(const char* src, u64 src_len, jToken* tokens, u64* toke
             };
         }
 
-        else if (src[i] == '\"') {
-            u64 start = ++i;
-            while (src[i] != '\"') { ++i; }
-
-            u64   len = i - start;
-            char* str = malloc((len + 1) * sizeof(char));
-            strncpy(str, src + start, len);
-            str[len]                 = '\0';
-
-            tokens[(*token_count)++] = (jToken){
-                .str  = str,
-                .line = line,
-                .type = JT_LIT_STR,
-            };
-        }
-
         else if (isalpha(src[i]) || (src[i] == '_')) {
             u64 start = i;
             while (isalnum(src[i + 1]) || (src[i + 1] == '_')) { ++i; }
@@ -88,7 +72,7 @@ enum j_error_t jTokenize(const char* src, u64 src_len, jToken* tokens, u64* toke
             strncpy(str, src + start, len);
             str[len]                 = '\0';
 
-            type                     = jTryGetToken(str, &hashed);
+            type                     = jTryGetLongToken(str);
             tokens[(*token_count)++] = (jToken){
                 .str  = str,
                 .line = line,
@@ -109,6 +93,22 @@ enum j_error_t jTokenize(const char* src, u64 src_len, jToken* tokens, u64* toke
                 .int_value = strtol(data, NULL, 10),
                 .line      = line,
                 .type      = JT_LIT_INT,
+            };
+        }
+
+        else if (src[i] == '\"') {
+            u64 start = ++i;
+            while (src[i] != '\"') { ++i; }
+
+            u64   len = i - start;
+            char* str = malloc((len + 1) * sizeof(char));
+            strncpy(str, src + start, len);
+            str[len]                 = '\0';
+
+            tokens[(*token_count)++] = (jToken){
+                .str  = str,
+                .line = line,
+                .type = JT_LIT_STR,
             };
         }
 
