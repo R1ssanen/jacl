@@ -9,131 +9,126 @@ typedef struct {
     const char*    str;
     u64            hash;
     enum j_token_t type;
-} jLongPair;
+} jTokenPair;
 
-#define _J_LONG_PAIR(str, type) [type] = { str, 0, type }
+#define _J_TOKEN_PAIR(s, t)                                                                        \
+    (jTokenPair) { .str = s, .hash = 0, .type = t }
 
-jLongPair _J_LONG_TOKENS[] = {
-    // keywords
-    _J_LONG_PAIR("exit", JT_KEY_EXIT),
+jTokenPair _J_TOKEN_STRINGS[] = {
+    // OPERATORS
+    // arithmetic
+    (jTokenPair){ "+",    0, JT_OP_ADD      },
+    (jTokenPair){ "-",    0, JT_OP_SUB      },
+    (jTokenPair){ "*",    0, JT_OP_MUL      },
+    (jTokenPair){ "/",    0, JT_OP_DIV      },
 
-    // built-in types
-    _J_LONG_PAIR("b8", JT_TYPE_B8),
-    _J_LONG_PAIR("i8", JT_TYPE_I8),
-    _J_LONG_PAIR("i32", JT_TYPE_I32),
-    _J_LONG_PAIR("i64", JT_TYPE_I64),
-    _J_LONG_PAIR("u8", JT_TYPE_U8),
-    _J_LONG_PAIR("u32", JT_TYPE_U32),
-    _J_LONG_PAIR("u64", JT_TYPE_U64),
-    _J_LONG_PAIR("f32", JT_TYPE_F32),
-    _J_LONG_PAIR("f64", JT_TYPE_F64),
+    // logical
+    (jTokenPair){ "=",    0, JT_OP_EQ       },
+    (jTokenPair){ "<",    0, JT_OP_LESS     },
+    (jTokenPair){ ">",    0, JT_OP_GREAT    },
+    (jTokenPair){ "&",    0, JT_OP_AND      },
+    (jTokenPair){ "|",    0, JT_OP_OR       },
+
+    // other
+    (jTokenPair){ ":=",   0, JT_OP_ASSIGN   },
+
+    // SPECIAL CHARACTERS
+    (jTokenPair){ "[",    0, JT_SPEC_LBRACK },
+    (jTokenPair){ "]",    0, JT_SPEC_RBRACK },
+    (jTokenPair){ "(",    0, JT_SPEC_LPAREN },
+    (jTokenPair){ ")",    0, JT_SPEC_RPAREN },
+    (jTokenPair){ "{",    0, JT_SPEC_LBRACE },
+    (jTokenPair){ "}",    0, JT_SPEC_RBRACE },
+    (jTokenPair){ ".",    0, JT_SPEC_DOT    },
+    (jTokenPair){ ",",    0, JT_SPEC_COMMA  },
+    (jTokenPair){ ":",    0, JT_SPEC_COLON  },
+    (jTokenPair){ ";",    0, JT_SPEC_SEMI   },
+    (jTokenPair){ "f",    0, JT_SPEC_FORMAT },
+
+    // KEYWORDS
+    (jTokenPair){ "exit", 0, JT_KEY_EXIT    },
+
+    // ELEMENTARY TYPES
+    (jTokenPair){ "b8",   0, JT_TYPE_B8     },
+    (jTokenPair){ "i8",   0, JT_TYPE_I8     },
+    (jTokenPair){ "i32",  0, JT_TYPE_I32    },
+    (jTokenPair){ "i64",  0, JT_TYPE_I64    },
+    (jTokenPair){ "u8",   0, JT_TYPE_U8     },
+    (jTokenPair){ "u32",  0, JT_TYPE_U32    },
+    (jTokenPair){ "u64",  0, JT_TYPE_U64    },
+    (jTokenPair){ "f32",  0, JT_TYPE_F32    },
+    (jTokenPair){ "f64",  0, JT_TYPE_F64    },
 };
 
-void jPrehashLongTokens(void) {
-
-    u64 tokens = sizeof(_J_LONG_TOKENS) / sizeof(jLongPair);
+void jPrehashTokenStrings(void) {
+    u64 tokens = sizeof(_J_TOKEN_STRINGS) / sizeof(jTokenPair);
 
     for (u64 i = 0; i < tokens; ++i) {
-        jLongPair* pair = _J_LONG_TOKENS + i;
-        pair->hash      = FNV_1A(pair->str);
+        jTokenPair* pair = _J_TOKEN_STRINGS + i;
+        if (!pair->str) { fputs("what\n", stderr); }
+        pair->hash = FNV_1A(pair->str, strlen(pair->str));
     }
 }
 
-enum j_token_t jTryGetLongToken(const char* str) {
-
+enum j_token_t jTryGetToken(const char* str, u64 len) {
     if (!str) { return JT_INVALID; }
 
-    u64 hash = FNV_1A(str);
+    u64 hash = FNV_1A(str, len);
     if (hash == 0ULL) { return JT_INVALID; }
 
-    u64 tokens = sizeof(_J_LONG_TOKENS) / sizeof(jLongPair);
+    u64 tokens = sizeof(_J_TOKEN_STRINGS) / sizeof(jTokenPair);
 
     for (u64 i = 0; i < tokens; ++i) {
-        jLongPair* pair = _J_LONG_TOKENS + i;
+        jTokenPair* pair = _J_TOKEN_STRINGS + i;
         if (pair->hash == hash) { return pair->type; }
     }
 
     return JT_INVALID;
 }
 
-const char* jGetLongTokenString(enum j_token_t type) { return _J_LONG_TOKENS[type].str; }
-
-typedef struct {
-    enum j_token_t type;
-    const char     c;
-} jShortPair;
-
-#define _J_SHORT_PAIR(c, type) [type] = { type, c }
-
-jShortPair _J_SHORT_TOKENS[] = {
-    // operators
-    _J_SHORT_PAIR('+', JT_OP_ADD),
-    _J_SHORT_PAIR('-', JT_OP_SUB),
-    _J_SHORT_PAIR('*', JT_OP_MUL),
-    _J_SHORT_PAIR('/', JT_OP_DIV),
-    _J_SHORT_PAIR('=', JT_OP_EQ),
-    _J_SHORT_PAIR('<', JT_OP_LESS),
-    _J_SHORT_PAIR('>', JT_OP_GREAT),
-    _J_SHORT_PAIR('&', JT_OP_AND),
-    _J_SHORT_PAIR('|', JT_OP_OR),
-
-    // special characters
-    _J_SHORT_PAIR('[', JT_SPEC_LBRACK),
-    _J_SHORT_PAIR(']', JT_SPEC_RBRACK),
-    _J_SHORT_PAIR('(', JT_SPEC_LPAREN),
-    _J_SHORT_PAIR(')', JT_SPEC_RPAREN),
-    _J_SHORT_PAIR('{', JT_SPEC_LBRACE),
-    _J_SHORT_PAIR('}', JT_SPEC_RBRACE),
-    _J_SHORT_PAIR('.', JT_SPEC_DOT),
-    _J_SHORT_PAIR(',', JT_SPEC_COMMA),
-    _J_SHORT_PAIR(':', JT_SPEC_COLON),
-    _J_SHORT_PAIR(';', JT_SPEC_SEMI),
-    _J_SHORT_PAIR('f', JT_SPEC_FORMAT),
-};
-
-enum j_token_t jTryGetShortToken(char c) {
-
-    u64 tokens = sizeof(_J_SHORT_TOKENS) / sizeof(jShortPair);
+const char* jGetTokenString(enum j_token_t type) {
+    u64 tokens = sizeof(_J_TOKEN_STRINGS) / sizeof(jTokenPair);
 
     for (u64 i = 0; i < tokens; ++i) {
-        jShortPair* pair = _J_SHORT_TOKENS + i;
-        if (pair->c == c) { return pair->type; }
+        jTokenPair* pair = _J_TOKEN_STRINGS + i;
+        if (pair->type == type) { return pair->str; }
     }
 
-    return JT_INVALID;
+    return NULL;
 }
 
-char jGetShortTokenCharacter(enum j_token_t type) { return _J_SHORT_TOKENS[type].c; }
-
 void jPrintDebugToken(const jToken* token) {
-
     if (token->type & JT_ID) {
-        fprintf(stderr, "id: %s\n", token->str);
+        fprintf(stderr, "(%lu, %lu) id: %s\n", token->line, token->col, token->str);
     }
 
     else if (token->type & JT_OP) {
-        fprintf(stderr, "op: %c\n", jGetShortTokenCharacter(token->type));
+        fprintf(
+            stderr, "(%lu, %lu) op: %s\n", token->line, token->col, jGetTokenString(token->type)
+        );
     }
 
     else if (token->type & JT_SPEC) {
-        fprintf(stderr, "spec: %c\n", jGetShortTokenCharacter(token->type));
+        fprintf(
+            stderr, "(%lu, %lu) spec: %s\n", token->line, token->col, jGetTokenString(token->type)
+        );
     }
 
     else if (token->type & JT_TYPE) {
-        fprintf(stderr, "type: %s\n", token->str);
+        fprintf(stderr, "(%lu, %lu) type: %s\n", token->line, token->col, token->str);
     }
 
     else if (token->type & JT_KEY) {
-        fprintf(stderr, "key: %s\n", token->str);
+        fprintf(stderr, "(%lu, %lu) key: %s\n", token->line, token->col, token->str);
     }
 
     else if (token->type & JT_LIT) {
         if (token->type == JT_LIT_INT) {
-            fprintf(stderr, "int: %lli\n", token->int_value);
+            fprintf(stderr, "(%lu, %lu) int: %lli\n", token->line, token->col, token->int_value);
         } else if (token->type == JT_LIT_FLOAT) {
-            fprintf(stderr, "float: %f\n", token->float_value);
+            fprintf(stderr, "(%lu, %lu) float: %f\n", token->line, token->col, token->float_value);
         } else {
-            fprintf(stderr, "str: %s\n", token->str);
+            fprintf(stderr, "(%lu, %lu) str: %s\n", token->line, token->col, token->str);
         }
     }
 

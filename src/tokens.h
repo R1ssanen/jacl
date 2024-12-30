@@ -8,19 +8,25 @@
 enum j_token_t {
     JT_INVALID     = 0,
 
-    // operators
+    // OPERATORS
+    // arithmetic
     JT_OP          = _J_MS_BIT(0),
     JT_OP_ADD      = (1 | JT_OP),
     JT_OP_SUB      = (2 | JT_OP),
     JT_OP_MUL      = (3 | JT_OP),
     JT_OP_DIV      = (4 | JT_OP),
+
+    // logical
     JT_OP_EQ       = (5 | JT_OP),
     JT_OP_LESS     = (6 | JT_OP),
     JT_OP_GREAT    = (7 | JT_OP),
     JT_OP_AND      = (8 | JT_OP),
     JT_OP_OR       = (9 | JT_OP),
 
-    // special characters
+    // other
+    JT_OP_ASSIGN   = (10 | JT_OP),
+
+    // SPECIAL CHARACTERS
     JT_SPEC        = _J_MS_BIT(1),
     JT_SPEC_LBRACK = (1 | JT_SPEC),
     JT_SPEC_RBRACK = (2 | JT_SPEC),
@@ -34,21 +40,19 @@ enum j_token_t {
     JT_SPEC_SEMI   = (10 | JT_SPEC),
     JT_SPEC_FORMAT = (11 | JT_SPEC),
 
-    // keywords
+    // KEYWORDS
     JT_KEY         = _J_MS_BIT(2),
-    JT_KEY_TRUE    = (1 | JT_KEY),
-    JT_KEY_FALSE   = (2 | JT_KEY),
-    JT_KEY_RET     = (3 | JT_KEY),
-    JT_KEY_IF      = (4 | JT_KEY),
-    JT_KEY_ELIF    = (5 | JT_KEY),
-    JT_KEY_ELSE    = (6 | JT_KEY),
-    JT_KEY_MUT     = (7 | JT_KEY),
-    JT_KEY_EXIT    = (8 | JT_KEY),
-    JT_KEY_FOR     = (9 | JT_KEY),
-    JT_KEY_CONT    = (10 | JT_KEY),
-    JT_KEY_WHILE   = (11 | JT_KEY),
+    JT_KEY_RET     = (1 | JT_KEY),
+    JT_KEY_IF      = (2 | JT_KEY),
+    JT_KEY_ELIF    = (3 | JT_KEY),
+    JT_KEY_ELSE    = (4 | JT_KEY),
+    JT_KEY_MUT     = (5 | JT_KEY),
+    JT_KEY_EXIT    = (6 | JT_KEY),
+    JT_KEY_FOR     = (7 | JT_KEY),
+    JT_KEY_CONT    = (8 | JT_KEY),
+    JT_KEY_WHILE   = (9 | JT_KEY),
 
-    // built-in types
+    // ELEMENTARY TYPES
     JT_TYPE        = _J_MS_BIT(3),
     JT_TYPE_B8     = (1 | JT_TYPE),
     JT_TYPE_I8     = (2 | JT_TYPE),
@@ -60,31 +64,23 @@ enum j_token_t {
     JT_TYPE_F32    = (8 | JT_TYPE),
     JT_TYPE_F64    = (9 | JT_TYPE),
 
-    // literals
+    // LITERALS
     JT_LIT         = _J_MS_BIT(4),
     JT_LIT_INT     = (1 | JT_LIT),
     JT_LIT_FLOAT   = (2 | JT_LIT),
     JT_LIT_STR     = (3 | JT_LIT),
 
-    // identifier
+    // IDENTIFIER
     JT_ID          = _J_MS_BIT(5),
 };
 
-void           jPrehashLongTokens(void);
+void           jPrehashTokenStrings(void);
 
-enum j_token_t jTryGetLongToken(const char* str);
-const char*    jGetLongTokenString(enum j_token_t type);
-
-enum j_token_t jTryGetShortToken(char c);
-char           jGetShortTokenCharacter(enum j_token_t type);
+enum j_token_t jTryGetToken(const char* str, u64 len);
+const char*    jGetTokenString(enum j_token_t type);
 
 typedef struct {
-    enum {
-        J_ASSOC_LEFT,
-        J_ASSOC_RIGHT,
-    } assoc;
-
-    u8 prec;
+    u8 lbp, rbp;
 } _jOpInfo;
 
 typedef struct {
@@ -96,6 +92,7 @@ typedef struct {
     };
 
     u64            line;
+    u64            col;
     enum j_token_t type;
 } jToken;
 

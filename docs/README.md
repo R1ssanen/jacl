@@ -1,12 +1,15 @@
 # Formal grammar definition for JACLang
 
+# \text{[unary\_expression]} &\to \text{unary\_op} \space \text{[expression]} \\
+
 ### Production Rules
 
 $$\begin{align}
-\text{[root]} &\to \vec{\text{[statement]}} \\
+\text{[root]} &\to \text{[statement]}^* \\
 \text{[statement]} &\to \begin{cases}
     exit \space \text{[expression]}; \\
     \text{type:} \space \text{identifier} := \text{[expression]}; \\
+    \text{identifier} := \text{[expression]}; \\
 \end{cases} \\
 \text{[binary\_expression]} &\to \text{[expression]} \space \text{bin\_op} \space \text{[expression]} \\
 \text{[expression]} &\to \begin{cases}

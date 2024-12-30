@@ -2,48 +2,63 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
+#include "array.h"
 #include "expr.h"
 #include "hash.h"
+#include "mem.h"
 #include "types.h"
 
-jToken* jPeek(jParser* parser, u8 ahead) {
+void jDumpTokens(const jParser* parser) {
+    fputs("TOKEN STACK DUMP:\n", stderr);
 
-    if (parser->token_count <= 0) { return NULL; }
-    return parser->tokens + ahead;
+    for (u64 i = parser->curr_ptr; i < J_ARRAY_SIZE(parser->tokens); ++i) {
+        jPrintDebugToken(&parser->tokens[i]);
+    }
+
+    fputs("\n", stderr);
 }
 
-jToken* jConsume(jParser* parser) {
+b8 jParserIsEOF(const jParser* parser) { return parser->curr_ptr >= J_ARRAY_SIZE(parser->tokens); }
 
-    if (parser->token_count <= 0) { return NULL; }
-
-    parser->consumed++;
-    parser->token_count--;
-    return parser->tokens++;
+jToken* jParserPeek(const jParser* parser, u8 ahead) {
+    if (jParserIsEOF(parser)) { return NULL; }
+    return parser->tokens + parser->curr_ptr;
 }
 
-void jUndo(jParser* parser, u8 count) {
-
-    parser->consumed--;
-    parser->token_count += count;
-    parser->tokens -= count;
-}
-
-//  NOTE: MATCH EVERY CALL with jUndo to back from trying
-jToken* jRequire(enum j_token_t type, jParser* parser, b8 require_category) {
-
-    jToken* token = jConsume(parser);
+jToken* jParserConsume(jParser* parser) {
+    jToken* token = jParserPeek(parser, 0);
     if (!token) { return NULL; }
 
-    if ((token->type == type) || (require_category && (token->type & type))) { return token; }
+    parser->curr_ptr++;
+    return token;
+}
 
-    jUndo(parser, 1);
+// push the token stack back to point
+void jParserRevert(jParser* parser, u64 point) {
+    if (parser->curr_ptr < point) { return; }
+    u64 offset = parser->curr_ptr - point;
+    parser->curr_ptr -= offset;
+}
+
+jToken* jParserRequire(enum j_token_t type, jParser* parser, b8 require_category) {
+    jToken* token = jParserConsume(parser);
+    if (!token) { return NULL; }
+
+    if (require_category && (token->type & type)) { return token; }
+    if (token->type == type) { return token; }
+
+    parser->curr_ptr--;
     return NULL;
 }
 
-b8 TryParseLit(jParser* parser, jNodeLit* lit) {
+u64 jParserGetLine(const jParser* parser) { return jParserPeek(parser, 0)->line; }
 
-    jToken* token = jRequire(JT_LIT, parser, true);
+u64 jParserGetColumn(const jParser* parser) { return jParserPeek(parser, 0)->col; }
+
+b8  TryParseLit(jParser* parser, jNodeLit* lit) {
+    jToken* token = jParserRequire(JT_LIT, parser, true);
     if (!token) { return false; }
 
     switch (token->type) {
@@ -68,14 +83,12 @@ b8 TryParseLit(jParser* parser, jNodeLit* lit) {
 }
 
 b8 TryParseExprFStr(jParser* parser, jNodeExprFStr* fstr) {
+    u64 state = parser->curr_ptr;
 
-    if (!jRequire(JT_SPEC_FORMAT, parser, false)) { return false; }
+    if (!jParserRequire(JT_SPEC_FORMAT, parser, false)) { goto fail; }
 
-    jToken* token = jRequire(JT_LIT_STR, parser, false);
-    if (!token) {
-        jUndo(parser, 1);
-        return false;
-    }
+    jToken* token = jParserRequire(JT_LIT_STR, parser, false);
+    if (!token) { goto fail; }
 
     char fmt[2048];
     u64  fmt_len         = 0;
@@ -95,7 +108,7 @@ b8 TryParseExprFStr(jParser* parser, jNodeExprFStr* fstr) {
         strncpy(id, str + new_start, len);
         id[len]             = '\0';
 
-        u64            hash = FNV_1A(id);
+        u64            hash = FNV_1A(id, strlen(id));
         jNodeStmtInit* var  = NULL;
 
         for (u64 j = 0; j < parser->var_count; ++j) {
@@ -107,7 +120,7 @@ b8 TryParseExprFStr(jParser* parser, jNodeExprFStr* fstr) {
 
         if (!var) {
             fprintf(stderr, "Format identifier '%s' doesn't exist.\n", id);
-            return false;
+            goto fail;
         }
 
         u64 new_len = new_start - prev_end - 1;
@@ -121,7 +134,7 @@ b8 TryParseExprFStr(jParser* parser, jNodeExprFStr* fstr) {
             fmt[fmt_len++] = '%';
             fmt[fmt_len++] = 's';
         } else {
-            f32 val        = jSolveExpr(var->expr);
+            f32 val        = jSolveExpr(var->expr, parser);
 
             fmt[fmt_len++] = '%';
             fmt[fmt_len++] = 'f';
@@ -137,116 +150,128 @@ b8 TryParseExprFStr(jParser* parser, jNodeExprFStr* fstr) {
 
     fprintf(stderr, "%s", fstr->fmt);
     return true;
+
+fail:
+    jParserRevert(parser, state);
+    return false;
 }
 
-b8 TryParseExprId(jParser* parser, jNodeExprId* id) {
+b8 TryParseIdent(jParser* parser, jNodeExprId* id) {
+    u64     state = parser->curr_ptr;
 
-    jToken* token = jRequire(JT_ID, parser, true);
-    if (!token) { return false; }
+    jToken* token = jParserRequire(JT_ID, parser, true);
+    if (!token) { goto fail; }
 
-    id->id      = token->str;
-    id->hash    = FNV_1A(token->str);
-    id->mutable = false;
+    id->id         = token->str;
+    id->hash       = FNV_1A(token->str, strlen(token->str));
+    id->is_mutable = false;
     return true;
+
+fail:
+    jParserRevert(parser, state);
+    return false;
 }
 
-void TryParseBinExpr(jParser* parser, jNodeExpr* expr, u8 min_prec) {
+b8 TryParseExpr(jParser*, jNodeExpr*, jErrorHandler*, u8);
 
-    // TryParseExpr(parser, expr, false, 0);
+b8 TryParseAtom(jParser* parser, jNodeExpr* atom, jErrorHandler* err) {
+    u64 state = parser->curr_ptr;
 
-    jToken* token = jRequire(JT_OP, parser, true);
-    if (!token) { return; }
+    // subexpression
+    if (jParserRequire(JT_SPEC_LPAREN, parser, false)) {
+        if (!TryParseExpr(parser, atom, err, 0)) { goto fail; }
+        if (!jParserRequire(JT_SPEC_RPAREN, parser, false)) { goto fail; }
 
-    jNodeExpr lhs       = *expr;
-    expr->bin_expr      = malloc(sizeof(jNodeBinExpr));
-    expr->bin_expr->lhs = malloc(sizeof(jNodeExpr));
-    expr->bin_expr->rhs = malloc(sizeof(jNodeExpr));
-    expr->has           = JN_BIN_EXPR;
-
-    while (token && (token->opinfo.prec >= min_prec)) {
-
-        u8 next_min_prec = token->opinfo.prec;
-        if (token->opinfo.assoc == J_ASSOC_LEFT) { next_min_prec += 1; }
-
-        jNodeExpr rhs;
-        // TryParseExpr(parser, &rhs, true, next_min_prec);
-        TryParseBinExpr(parser, &rhs, next_min_prec);
-
-        *expr->bin_expr->lhs = lhs;
-        *expr->bin_expr->rhs = rhs;
-        expr->bin_expr->op   = token->type;
-
-        lhs                  = *expr;
-        token                = jRequire(JT_OP, parser, true);
+        return true;
     }
-}
 
-b8 TryParseExpr(jParser* parser, jNodeExpr* expr) {
+    jNodeLit lit;
+    if (TryParseLit(parser, &lit)) {
+        atom->lit  = malloc(sizeof(jNodeLit));
+        *atom->lit = lit;
+        atom->has  = JN_LIT;
 
-    do {
-        jNodeLit lit;
-        if (TryParseLit(parser, &lit)) {
-            expr->lit  = malloc(sizeof(jNodeLit));
-            *expr->lit = lit;
-            expr->has  = JN_LIT;
-            break;
-        }
-
-        jNodeExprId id;
-        if (TryParseExprId(parser, &id)) {
-            expr->id  = malloc(sizeof(jNodeExprId));
-            *expr->id = id;
-            expr->has = JN_EXPR_ID;
-            break;
-        }
-
-        jNodeExprFStr fstr;
-        if (TryParseExprFStr(parser, &fstr)) {
-            expr->fstr  = malloc(sizeof(jNodeExprFStr));
-            *expr->fstr = fstr;
-            expr->has   = JN_EXPR_FSTR;
-            break;
-        }
-
-        return false;
-    } while (false);
-
-    // if (parse_bin_expr) { TryParseBinExpr(parser, expr, min_prec); }
-
-    return true;
-}
-
-b8 TryParseInit(jParser* parser, jNodeStmtInit* init) {
-
-    jToken* type = jRequire(JT_TYPE, parser, true);
-    if (!type) { return false; }
-
-    if (!jRequire(JT_SPEC_COLON, parser, false)) {
-        jUndo(parser, 1);
-        return false;
+        return true;
     }
 
     jNodeExprId id;
-    if (!TryParseExprId(parser, &id)) {
-        jUndo(parser, 2);
-        return false;
+    if (TryParseIdent(parser, &id)) {
+        atom->id  = malloc(sizeof(jNodeExprId));
+        *atom->id = id;
+        atom->has = JN_EXPR_ID;
+
+        return true;
     }
 
-    if (!jRequire(JT_SPEC_COLON, parser, false)) {
-        jUndo(parser, 3);
-        return false;
+    jNodeExprFStr fstr;
+    if (TryParseExprFStr(parser, &fstr)) {
+        atom->fstr  = malloc(sizeof(jNodeExprFStr));
+        *atom->fstr = fstr;
+        atom->has   = JN_EXPR_FSTR;
+
+        return true;
     }
 
-    if (!jRequire(JT_OP_EQ, parser, false)) {
-        jUndo(parser, 4);
-        return false;
-    }
+fail:
+    jParserRevert(parser, state);
+    return false;
+}
+
+b8 TryParseExpr(jParser* parser, jNodeExpr* expr, jErrorHandler* err, u8 min_bind) {
+    u64 state = parser->curr_ptr;
+    if (!TryParseAtom(parser, expr, err)) { goto fail; }
+
+    jToken* op = jParserPeek(parser, 0);
+    if (!(op->type & JT_OP) || (op->opinfo.lbp < min_bind)) { return true; }
+
+    jNodeExpr lhs = *expr;
+    expr->has     = JN_BIN_EXPR;
+
+    do {
+        jParserConsume(parser);
+        jNodeExpr rhs;
+        if (!TryParseExpr(parser, &rhs, err, op->opinfo.rbp)) { goto fail; }
+
+        expr->bin_expr       = malloc(sizeof(jNodeBinExpr));
+        expr->bin_expr->lhs  = malloc(sizeof(jNodeExpr));
+        expr->bin_expr->rhs  = malloc(sizeof(jNodeExpr));
+
+        *expr->bin_expr->lhs = lhs;
+        *expr->bin_expr->rhs = rhs;
+        expr->bin_expr->op   = op->type;
+
+        lhs                  = *expr;
+        op                   = jParserPeek(parser, 0);
+    } while ((op->type & JT_OP) && (op->opinfo.lbp >= min_bind));
+
+    return true;
+
+fail:
+    jRaiseError(
+        err, JE_SYNTAX, "Invalid expression.", jParserGetLine(parser), jParserGetColumn(parser)
+    );
+
+    jParserRevert(parser, state);
+    return false;
+}
+
+b8 TryParseInit(jParser* parser, jNodeStmtInit* init, jErrorHandler* err) {
+    u64     state = parser->curr_ptr;
+
+    jToken* type  = jParserRequire(JT_TYPE, parser, true);
+    if (!type) { goto fail; }
+
+    if (!jParserRequire(JT_SPEC_COLON, parser, false)) { goto fail; }
+
+    jNodeExprId id;
+    if (!TryParseIdent(parser, &id)) { goto fail; }
+
+    if (!jParserRequire(JT_SPEC_COLON, parser, false)) { goto fail; }
+
+    if (!jParserRequire(JT_OP_EQ, parser, false)) { goto fail; }
 
     jNodeExpr expr;
-    if (!TryParseExpr(parser, &expr)) {
-        jUndo(parser, 4);
-        return false;
-    }
+    if (!TryParseExpr(parser, &expr, err, 0)) { goto fail; }
 
     init->type                        = type->type;
     init->id                          = malloc(sizeof(jNodeExprId));
@@ -255,72 +280,110 @@ b8 TryParseInit(jParser* parser, jNodeStmtInit* init) {
     *init->expr                       = expr;
 
     parser->vars[parser->var_count++] = *init;
-
     return true;
+
+fail:
+    jParserRevert(parser, state);
+    return false;
 }
 
-b8 TryParseExit(jParser* parser, jNodeStmtExit* exit) {
+b8 TryParseAssign(jParser* parser, jNodeStmtAssign* assign, jErrorHandler* err) {
+    u64         state = parser->curr_ptr;
 
-    if (!jRequire(JT_KEY_EXIT, parser, false)) { return false; }
+    jNodeExprId id;
+    if (!TryParseIdent(parser, &id)) { goto fail; }
+
+    if (!jParserRequire(JT_SPEC_COLON, parser, false)) { goto fail; }
+    if (!jParserRequire(JT_OP_EQ, parser, false)) { goto fail; }
 
     jNodeExpr expr;
-    if (!TryParseExpr(parser, &expr)) {
-        jUndo(parser, 1);
-        return false;
-    }
+    if (!TryParseExpr(parser, &expr, err, 0)) { goto fail; }
 
-    if (expr.has == JN_BIN_EXPR) {
-        f32 ans = jSolveBinExpr(expr.bin_expr);
-        fprintf(stderr, "ans = %f\n", ans);
-    }
+    assign->id    = malloc(sizeof(jNodeExprId));
+    *assign->id   = id;
+    assign->expr  = malloc(sizeof(jNodeExpr));
+    *assign->expr = expr;
+
+    return true;
+
+fail:
+    jParserRevert(parser, state);
+    return false;
+}
+
+b8 TryParseExit(jParser* parser, jNodeStmtExit* exit, jErrorHandler* err) {
+    u64 state = parser->curr_ptr;
+
+    if (!jParserRequire(JT_KEY_EXIT, parser, false)) { goto fail; }
+
+    jNodeExpr expr;
+    if (!TryParseExpr(parser, &expr, err, 0)) { goto fail; }
+
+    f32 solution = jSolveExpr(&expr, parser);
+    fprintf(stderr, "expr = %f\n", solution);
 
     exit->expr  = malloc(sizeof(jNodeExpr));
     *exit->expr = expr;
     return true;
+
+fail:
+    jParserRevert(parser, state);
+    return false;
 }
 
-enum j_error_t TryParseStmt(jParser* parser, jNodeStmt* stmt) {
+b8 TryParseStmt(jParser* parser, jNodeStmt* stmt, jErrorHandler* err) {
+    jNodeStmtExit exit;
+    if (TryParseExit(parser, &exit, err)) {
+        stmt->exit  = malloc(sizeof(jNodeStmtExit));
+        *stmt->exit = exit;
+        stmt->has   = JN_STMT_EXIT;
 
-    do {
-        jNodeStmtExit exit;
-        if (TryParseExit(parser, &exit)) {
-            stmt->exit  = malloc(sizeof(jNodeStmtExit));
-            *stmt->exit = exit;
-            stmt->has   = JN_STMT_EXIT;
-            break;
-        }
-
-        jNodeStmtInit init;
-        if (TryParseInit(parser, &init)) {
-            stmt->init  = malloc(sizeof(jNodeStmtInit));
-            *stmt->init = init;
-            stmt->has   = JN_STMT_INIT;
-            break;
-        }
-
-        return J_ERROR;
-    } while (false);
-
-    if (!jRequire(JT_SPEC_SEMI, parser, false)) { return J_ERROR; }
-    return J_SUCCESS;
-}
-
-enum j_error_t jParse(jParser* parser, jNodeRoot* program) {
-
-    enum j_error_t err;
-
-    while (parser->token_count > 0) {
-        jNodeStmt stmt;
-        if (!(err = TryParseStmt(parser, &stmt))) {
-            program->stmts[program->stmt_count++] = stmt;
-            continue;
-        }
-
-        fputs("\nTokenS LEFT ON parser:\n", stderr);
-        for (u64 i = 0; i < parser->token_count; ++i) { jPrintDebugToken(&parser->tokens[i]); }
-        fputs("\n", stderr);
-        return err;
+        goto success;
     }
 
-    return J_SUCCESS;
+    jNodeStmtInit init;
+    if (TryParseInit(parser, &init, err)) {
+        stmt->init  = malloc(sizeof(jNodeStmtInit));
+        *stmt->init = init;
+        stmt->has   = JN_STMT_INIT;
+
+        /*if (jIsConstExpr(stmt->init->expr)) {
+            printf("init_val: %f\n", jSolveExpr(stmt->init->expr, parser));
+        }*/
+
+        goto success;
+    }
+
+    jRaiseError(
+        err, JE_SYNTAX, "Invalid statement.", jParserGetLine(parser), jParserGetColumn(parser)
+    );
+
+    return false;
+
+success:
+    if (jParserRequire(JT_SPEC_SEMI, parser, false)) { return true; }
+
+    jRaiseError(
+        err, JE_SYNTAX, "Missing semicolon.", jParserGetLine(parser), jParserGetColumn(parser)
+    );
+    return false;
+}
+
+b8 jParse(jParser* parser, jNodeStmt* stmts, jErrorHandler* err) {
+
+    while (!jParserIsEOF(parser)) {
+        jNodeStmt stmt;
+        if (!TryParseStmt(parser, &stmt, err)) {
+            if (err->error_count >= J_MAX_ERRORS) { return false; }
+
+            // skip to next statement
+            while (jParserConsume(parser)->type != JT_SPEC_SEMI);
+        } else {
+            J_ARRAY_PUSH(stmts, stmt);
+        }
+    }
+
+    // errors thrown
+    if (err->error_count) { return false; }
+    return true;
 }

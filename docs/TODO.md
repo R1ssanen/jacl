@@ -1,33 +1,73 @@
 # JACLang feature plan
 
-- [ ] static typesystem
-  - [ ] type checking
-  - [ ] type sizes
+- [ ] expressions
+  - [x] binary expressions
+    - [x] parentheses
+    - [x] order of operations
+
+  - [ ] unary expressions
+    - [ ] prefix
+      - [ ] increment
+      - [ ] decrement
+      - [ ] negation (-)
+      - [ ] positivisation (+)
+      - [ ] logical not
+
+    - [ ] affix
+      - [ ] array indexing
+
 - [ ] stack variables
-- [ ] assignment, declaration & definition
-- [ ] literal printing
-- [ ] binary expressions
-  - [ ] parentheses
-  - [ ] order of operations
-- [ ] unary expressions
-  - [ ] prefix math
-    - [ ] increment
-    - [ ] decrement
-  - [ ] sign
-    - [ ] negation (-)
-    - [ ] positivisation (+)
-  - [ ] not
-    - [ ] logical not
-    - [ ] bitwise not
+  - [x] definition
+  - [ ] assignment
+
 - [ ] scopes
+  - [ ] variable lifetimes
+
 - [ ] control flow
-  - [ ] while
-  - [ ] for
   - [ ] if
     - [ ] elif
     - [ ] else
-  - [ ] select-case
-- [ ] functions & entry point
+
+  - [ ] match-case
+  - [ ] while
+  - [ ] for
+
+- [ ] functions
+  - [ ] definition
+  - [ ] calls
+  - [ ] return
+
+- [ ] macros
+  - [ ] macro variables
+  - [ ] macro functions
+
+- [ ] memory management
+  - [ ] references
+  - [ ] pointers (maybe?)
+    - [ ] null deref checking (debug mode only)
+
+  - [ ] arrays
+    - [ ] bounds checking (debug mode only)
+
+- [ ] static typesystem
+  - [ ] type checking
+  - [ ] type sizes
+
 - [ ] float math
-- [ ] boolean math
-- [ ] arrays & pointers
+
+- [ ] project file management
+  - [ ] symbol visibility
+    - [ ] public
+    - [ ] private
+
+  - [ ] 'from {file} use *'
+    - [ ] wildcard import (all public symbols)
+    - [ ] import specific public symbols by name
+    - [ ] 'migrate' symbols under new namespace
+  
+- [ ] standard library
+  - [ ] print(str)
+  - [ ] exit(int)
+
+- [ ] release mode
+  - [ ] optimizations

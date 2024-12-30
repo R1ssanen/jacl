@@ -10,6 +10,7 @@ enum j_node_t {
     JN_STMT,
     JN_STMT_EXIT,
     JN_STMT_INIT,
+    JN_STMT_ASSIGN,
 
     JN_BIN_EXPR,
     JN_EXPR,
@@ -22,17 +23,18 @@ enum j_node_t {
     JN_LIT_STR,
 };
 
-typedef struct jNodeRoot     jNodeRoot;
+typedef struct jNodeRoot       jNodeRoot;
 
-typedef struct jNodeStmt     jNodeStmt;
-typedef struct jNodeStmtExit jNodeStmtExit;
-typedef struct jNodeStmtInit jNodeStmtInit;
+typedef struct jNodeStmt       jNodeStmt;
+typedef struct jNodeStmtExit   jNodeStmtExit;
+typedef struct jNodeStmtInit   jNodeStmtInit;
+typedef struct jNodeStmtAssign jNodeStmtAssign;
 
-typedef struct jNodeBinExpr  jNodeBinExpr;
-typedef struct jNodeExpr     jNodeExpr;
-typedef struct jNodeExprId   jNodeExprId;
-typedef struct jNodeExprFStr jNodeExprFStr;
-typedef struct jNodeLit      jNodeLit;
+typedef struct jNodeBinExpr    jNodeBinExpr;
+typedef struct jNodeExpr       jNodeExpr;
+typedef struct jNodeExprId     jNodeExprId;
+typedef struct jNodeExprFStr   jNodeExprFStr;
+typedef struct jNodeLit        jNodeLit;
 
 struct jNodeRoot {
     jNodeStmt* stmts;
@@ -53,9 +55,14 @@ struct jNodeStmtExit {
 };
 
 struct jNodeStmtInit {
-    enum j_token_t type;
     jNodeExprId*   id;
     jNodeExpr*     expr;
+    enum j_token_t type;
+};
+
+struct jNodeStmtAssign {
+    jNodeExprId* id;
+    jNodeExpr*   expr;
 };
 
 struct jNodeBinExpr {
@@ -84,7 +91,7 @@ struct jNodeExprFStr {
 struct jNodeExprId {
     const char* id;
     u64         hash;
-    b8 mutable;
+    b8          is_mutable;
 };
 
 struct jNodeLit {
