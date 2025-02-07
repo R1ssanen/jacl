@@ -7,24 +7,19 @@
 
 enum j_token_t {
     JT_INVALID     = 0,
+    JT_EOF         = 1,
 
     // OPERATORS
-    // arithmetic
     JT_OP          = _J_MS_BIT(0),
     JT_OP_ADD      = (1 | JT_OP),
     JT_OP_SUB      = (2 | JT_OP),
     JT_OP_MUL      = (3 | JT_OP),
     JT_OP_DIV      = (4 | JT_OP),
-
-    // logical
     JT_OP_EQ       = (5 | JT_OP),
     JT_OP_LESS     = (6 | JT_OP),
     JT_OP_GREAT    = (7 | JT_OP),
     JT_OP_AND      = (8 | JT_OP),
     JT_OP_OR       = (9 | JT_OP),
-
-    // other
-    JT_OP_ASSIGN   = (10 | JT_OP),
 
     // SPECIAL CHARACTERS
     JT_SPEC        = _J_MS_BIT(1),
@@ -56,13 +51,15 @@ enum j_token_t {
     JT_TYPE        = _J_MS_BIT(3),
     JT_TYPE_B8     = (1 | JT_TYPE),
     JT_TYPE_I8     = (2 | JT_TYPE),
-    JT_TYPE_I32    = (3 | JT_TYPE),
-    JT_TYPE_I64    = (4 | JT_TYPE),
-    JT_TYPE_U8     = (5 | JT_TYPE),
-    JT_TYPE_U32    = (6 | JT_TYPE),
-    JT_TYPE_U64    = (7 | JT_TYPE),
-    JT_TYPE_F32    = (8 | JT_TYPE),
-    JT_TYPE_F64    = (9 | JT_TYPE),
+    JT_TYPE_I16    = (3 | JT_TYPE),
+    JT_TYPE_I32    = (4 | JT_TYPE),
+    JT_TYPE_I64    = (5 | JT_TYPE),
+    JT_TYPE_U8     = (6 | JT_TYPE),
+    JT_TYPE_U16    = (7 | JT_TYPE),
+    JT_TYPE_U32    = (8 | JT_TYPE),
+    JT_TYPE_U64    = (9 | JT_TYPE),
+    JT_TYPE_F32    = (10 | JT_TYPE),
+    JT_TYPE_F64    = (11 | JT_TYPE),
 
     // LITERALS
     JT_LIT         = _J_MS_BIT(4),
@@ -75,8 +72,7 @@ enum j_token_t {
 };
 
 void           jPrehashTokenStrings(void);
-
-enum j_token_t jTryGetToken(const char* str, u64 len);
+enum j_token_t jTryGetToken(const u8* str, u64 len);
 const char*    jGetTokenString(enum j_token_t type);
 
 typedef struct {
@@ -84,15 +80,9 @@ typedef struct {
 } _jOpInfo;
 
 typedef struct {
-    union {
-        _jOpInfo    opinfo;      // for operator
-        const char* str;         // for identifier and str literal
-        i64         int_value;   // for int literal
-        f64         float_value; // for float literal
-    };
-
-    u64            line;
-    u64            col;
+    _jOpInfo       opinfo; // for operators
+    u8*            data;
+    u64            line, column, length;
     enum j_token_t type;
 } jToken;
 

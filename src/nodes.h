@@ -7,101 +7,90 @@
 enum j_node_t {
     JN_INVALID = 0,
 
-    JN_STMT,
-    JN_STMT_EXIT,
-    JN_STMT_INIT,
-    JN_STMT_ASSIGN,
+    JN_STATEMENT,
+    JN_STAT_EXIT,
+    JN_STAT_INIT,
+    JN_STAT_ASSIGN,
 
-    JN_BIN_EXPR,
-    JN_EXPR,
+    JN_EXPRESSION,
+    JN_EXPR_BIN,
     JN_EXPR_ID,
     JN_EXPR_FSTR,
 
-    JN_LIT,
+    JN_LITERAL,
     JN_LIT_INT,
     JN_LIT_FLOAT,
     JN_LIT_STR,
 };
 
-typedef struct jNodeRoot       jNodeRoot;
+typedef struct jNodeStatement  jNodeStatement;
+typedef struct jNodeStatExit   jNodeStatExit;
+typedef struct jNodeStatInit   jNodeStatInit;
+typedef struct jNodeStatAssign jNodeStatAssign;
 
-typedef struct jNodeStmt       jNodeStmt;
-typedef struct jNodeStmtExit   jNodeStmtExit;
-typedef struct jNodeStmtInit   jNodeStmtInit;
-typedef struct jNodeStmtAssign jNodeStmtAssign;
-
-typedef struct jNodeBinExpr    jNodeBinExpr;
-typedef struct jNodeExpr       jNodeExpr;
-typedef struct jNodeExprId     jNodeExprId;
+typedef struct jNodeExpression jNodeExpression;
+typedef struct jNodeExprBin    jNodeExprBin;
+typedef struct jNodeExprIdent  jNodeExprIdent;
 typedef struct jNodeExprFStr   jNodeExprFStr;
-typedef struct jNodeLit        jNodeLit;
 
-struct jNodeRoot {
-    jNodeStmt* stmts;
-    u64        stmt_count;
-};
+typedef struct jNodeLiteral    jNodeLiteral;
 
-struct jNodeStmt {
+struct jNodeStatement {
     union {
-        jNodeStmtExit* exit;
-        jNodeStmtInit* init;
+        jNodeStatExit* exit;
+        jNodeStatInit* init;
     };
 
     enum j_node_t has;
 };
 
-struct jNodeStmtExit {
-    jNodeExpr* expr;
+struct jNodeStatExit {
+    jNodeExpression* expr;
 };
 
-struct jNodeStmtInit {
-    jNodeExprId*   id;
-    jNodeExpr*     expr;
-    enum j_token_t type;
+struct jNodeStatInit {
+    jNodeExprIdent*  id;
+    jNodeExpression* expr;
+    enum j_token_t   type;
 };
 
-struct jNodeStmtAssign {
-    jNodeExprId* id;
-    jNodeExpr*   expr;
+struct jNodeStatAssign {
+    jNodeExprIdent*  id;
+    jNodeExpression* expr;
 };
 
-struct jNodeBinExpr {
-    jNodeExpr*     lhs;
-    jNodeExpr*     rhs;
-    enum j_token_t op;
+struct jNodeExprBin {
+    jNodeExpression* lhs;
+    jNodeExpression* rhs;
+    enum j_token_t   op;
 };
 
-struct jNodeExpr {
+struct jNodeExpression {
     union {
-        jNodeLit*      lit;
-        jNodeBinExpr*  bin_expr;
-        jNodeExprId*   id;
-        jNodeExprFStr* fstr;
+        jNodeLiteral*   lit;
+        jNodeExprBin*   bin_expr;
+        jNodeExprIdent* id;
+        jNodeExprFStr*  fstr;
     };
 
     enum j_node_t has;
 };
 
-struct jNodeExprFStr {
-    u64         ids[64];
-    const char* fmt;
-    u64         id_count;
+struct jNodeExprIdent {
+    const u8* id;
+    u64       hash;
+    b8        is_mutable;
 };
 
-struct jNodeExprId {
-    const char* id;
-    u64         hash;
-    b8          is_mutable;
-};
-
-struct jNodeLit {
-    union {
-        i64         int_value;
-        f64         float_value;
-        const char* str_value;
+struct jNodeLiteral {
+    union { // numeric values for optimization
+        i64 int_value;
+        f64 float_value;
     };
 
-    enum j_node_t has;
+    u8*            value; // string form of the literal
+    enum j_token_t intrinsic_type;
+    enum j_node_t  has;
 };
 
 #endif

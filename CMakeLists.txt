@@ -10,7 +10,7 @@ set(JACL_LIB ${PROJECT_NAME})
 add_subdirectory(src)
 
 set(JACL_BIN jaclang)
-add_executable(${JACL_BIN} "entry.c")
+add_executable(${JACL_BIN} entry.c)
 
 set_target_properties(
   ${JACL_BIN}

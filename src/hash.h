@@ -3,7 +3,7 @@
 
 #include "types.h"
 
-static inline u64 FNV_1A(const char* str, u64 len) {
+static inline u64 FNV_1A(const u8* str, u64 len) {
     if (!str) { return 0ULL; }
 
     u64 hash = 0xcbf29ce484222325;

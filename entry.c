@@ -1,49 +1,52 @@
 #include <jaclang.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include "array.h"
-
 i32 main(i32 argc, char** argv) {
     if (argc < 2) {
-        fputs("jacl: source file needed.\n", stderr);
+        J_FATAL("Source file needed.\n");
         return 1;
     }
 
-    jArenaMemory mem;
-    jInitMemArena(1024 * 1024 * 5, &mem);
-
     const char* filename = argv[1];
-    char*       src      = NULL;
+    u8*         src      = NULL;
     u64         src_len  = 0;
     {
         FILE* file = fopen(filename, "rb");
         if (!file) {
-            fprintf(stderr, "jacl: cannot open source file.\n %s\n", jGetErrnoString());
-            goto fail;
+            J_FATAL("Cannot open source file.\n %s\n", jGetErrnoString());
+            return 1;
         }
 
         fseek(file, 0, SEEK_END);
         src_len = ftell(file);
         fseek(file, 0, SEEK_SET);
+        if (!src_len) {
+            J_FATAL("Empty source file.\n");
+            return 1;
+        }
 
-        src = J_ALLOC_N(char, src_len + 1, &mem);
-        fread(src, sizeof(char), src_len, file);
+        src = malloc((src_len + 1) * sizeof(u8));
+        if (!src) {
+            free(src);
+            J_FATAL("Could not allocate memory for source buffer.\n %s\n", jGetErrnoString());
+            return 1;
+        }
+
+        fread((void*)src, sizeof(u8), src_len, file);
         if (ferror(file)) {
-            fprintf(
-                stderr, "jacl: error occurred while reading source file.\n %s\n", jGetErrnoString()
-            );
-            goto fail;
+            free(src);
+            J_FATAL("Error occurred while reading source file.\n %s\n", jGetErrnoString());
+            return 1;
         }
 
         fclose(file);
         src[src_len++] = '\0';
     }
 
-    jLexer  lexer  = { .src = src, .src_len = src_len, .line = 1, .col = 1 };
-    jToken* tokens = J_ARRAY_CREATE(jToken);
-    jTokenize(&lexer, tokens);
+    jLexer  lexer  = { .src = src, .src_len = src_len, .line = 1, .column = 1 };
+    jToken* tokens = J_ARRAY_INIT(jToken, 256);
+    jTokenize(&lexer, &tokens);
 
 #if 1
     fputs("\nTOKEN STACK:\n", stderr);
@@ -51,23 +54,30 @@ i32 main(i32 argc, char** argv) {
     fputs("\n", stderr);
 #endif
 
-    jErrorHandler err    = { .error_count = 0 };
-    jParser       parser = { .tokens = tokens };
-    jNodeStmt*    stmts  = J_ARRAY_CREATE(jNodeStmt);
-    if (!jParse(&parser, stmts, &err)) {
-        jPrintErrorStack(&err);
-        goto fail;
+    jParser         parser     = { .tokens = tokens, .vars = J_ARRAY_CREATE(jNodeStatInit) };
+    jError*         errors     = J_ARRAY_CREATE(jError);
+    jNodeStatement* statements = J_ARRAY_INIT(jNodeStatement, 128);
+    if (!jParse(&parser, &statements, &errors)) {
+        jPrintErrorStack(errors);
+
+        J_ARRAY_DESTROY(errors);
+        J_ARRAY_DESTROY(statements);
+        J_ARRAY_DESTROY(tokens);
+        J_ARRAY_DESTROY(parser.vars);
+        free(src);
+
+        return 1;
     }
 
 #if 0
-    _jDebugProgramTree(&program);
+    _jDebugProgramTree(statements);
 #endif
 
+    J_ARRAY_DESTROY(errors);
+    J_ARRAY_DESTROY(statements);
     J_ARRAY_DESTROY(tokens);
-    J_ARRAY_DESTROY(stmts);
-    return 0;
+    J_ARRAY_DESTROY(parser.vars);
+    free(src);
 
-fail:
-    free(mem.block);
-    return 1;
+    return 0;
 }

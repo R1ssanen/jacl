@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 
+#include "array.h"
 #include "nodes.h"
 #include "tokens.h"
 
@@ -28,12 +29,12 @@ static inline void _jPrintInt(i64 num, u64 level) {
     fprintf(stderr, "int = %lli\n", num);
 }
 
-static inline void _jPrintStr(const char* str, u64 level) {
+static inline void _jPrintStr(const u8* str, u64 level) {
     _jPrintOffset(level);
     fprintf(stderr, "str = '%s'\n", str);
 }
 
-static inline void _jPrintLit(const jNodeLit* lit, u64 level) {
+static inline void _jPrintLit(const jNodeLiteral* lit, u64 level) {
     _jPrintOffset(level);
     fputs("lit:\n", stderr);
     _jPrintOffset(level);
@@ -42,34 +43,13 @@ static inline void _jPrintLit(const jNodeLit* lit, u64 level) {
     switch (lit->has) {
     case JN_LIT_INT: _jPrintInt(lit->int_value, level + 2); return;
     case JN_LIT_FLOAT: _jPrintFloat(lit->float_value, level + 2); return;
-    case JN_LIT_STR: _jPrintStr(lit->str_value, level + 2); return;
+    case JN_LIT_STR: _jPrintStr(lit->value, level + 2); return;
 
     default: return;
     }
 }
 
-static inline void _jPrintFStr(const jNodeExprFStr* fstr, u64 level) {
-    _jPrintOffset(level);
-    fputs("fstr:\n", stderr);
-    _jPrintOffset(level);
-    fputs("   \\\n", stderr);
-
-    _jPrintStr(fstr->fmt, level + 2);
-    _jPrintOffset(level);
-    fputs("   |\n", stderr);
-    _jPrintOffset(level + 2);
-    fputs("ids: [\n", stderr);
-
-    for (u64 i = 0; i < fstr->id_count; ++i) {
-        _jPrintOffset(level + 4);
-        fprintf(stderr, "0x%lx\n", fstr->ids[i]);
-    }
-
-    _jPrintOffset(level + 2);
-    fputs("]\n", stderr);
-}
-
-static inline void _jPrintId(jNodeExprId* id, u64 level) {
+static inline void _jPrintId(jNodeExprIdent* id, u64 level) {
     _jPrintOffset(level);
     fputs("id:\n", stderr);
 
@@ -78,10 +58,11 @@ static inline void _jPrintId(jNodeExprId* id, u64 level) {
     _jPrintOffset(level + 2);
     fprintf(stderr, "ident = '%s'\n", id->id);
 
-    _jPrintOffset(level);
+    /*_jPrintOffset(level);
     fputs("   |\n", stderr);
     _jPrintOffset(level + 2);
     fprintf(stderr, "hash = 0x%lx\n", id->hash);
+    */
 
     _jPrintOffset(level);
     fputs("   |\n", stderr);
@@ -89,9 +70,9 @@ static inline void _jPrintId(jNodeExprId* id, u64 level) {
     fprintf(stderr, "mut = %s\n", id->is_mutable ? "true" : "false");
 }
 
-void               _jPrintBinExpr(const jNodeBinExpr*, u64);
+void               _jPrintBinExpr(const jNodeExprBin*, u64);
 
-static inline void _jPrintExpr(const jNodeExpr* expr, u64 level) {
+static inline void _jPrintExpr(const jNodeExpression* expr, u64 level) {
     if (!expr) {
         fputs("(NULL)\n", stderr);
         return;
@@ -103,16 +84,15 @@ static inline void _jPrintExpr(const jNodeExpr* expr, u64 level) {
     fputs("   \\\n", stderr);
 
     switch (expr->has) {
-    case JN_LIT: _jPrintLit(expr->lit, level + 2); return;
+    case JN_LITERAL: _jPrintLit(expr->lit, level + 2); return;
     case JN_EXPR_ID: _jPrintId(expr->id, level + 2); return;
-    case JN_BIN_EXPR: _jPrintBinExpr(expr->bin_expr, level + 2); return;
-    case JN_EXPR_FSTR: _jPrintFStr(expr->fstr, level + 2); return;
+    case JN_EXPR_BIN: _jPrintBinExpr(expr->bin_expr, level + 2); return;
 
     default: return;
     }
 }
 
-void _jPrintBinExpr(const jNodeBinExpr* bin_expr, u64 level) {
+void _jPrintBinExpr(const jNodeExprBin* bin_expr, u64 level) {
     _jPrintOffset(level);
     fputs("bin_expr:\n", stderr);
 
@@ -129,7 +109,7 @@ void _jPrintBinExpr(const jNodeBinExpr* bin_expr, u64 level) {
     _jPrintExpr(bin_expr->rhs, level + 2);
 }
 
-static inline void _jPrintInit(const jNodeStmtInit* init, u64 level) {
+static inline void _jPrintInit(const jNodeStatInit* init, u64 level) {
     _jPrintOffset(level);
     fputs("init:\n", stderr);
 
@@ -146,7 +126,7 @@ static inline void _jPrintInit(const jNodeStmtInit* init, u64 level) {
     _jPrintExpr(init->expr, level + 2);
 }
 
-static inline void _jPrintExit(const jNodeStmtExit* exit, u64 level) {
+static inline void _jPrintExit(const jNodeStatExit* exit, u64 level) {
     _jPrintOffset(level);
     fputs("exit:\n", stderr);
 
@@ -155,23 +135,23 @@ static inline void _jPrintExit(const jNodeStmtExit* exit, u64 level) {
     _jPrintExpr(exit->expr, level + 2);
 }
 
-static inline void _jPrintStmt(const jNodeStmt* stmt, u64 level) {
+static inline void _jPrintStmt(const jNodeStatement* stmt, u64 level) {
     fputs("stmt:\n", stderr);
     fputs("   \\\n", stderr);
 
     switch (stmt->has) {
-    case JN_STMT_EXIT: _jPrintExit(stmt->exit, level + 2); return;
-    case JN_STMT_INIT: _jPrintInit(stmt->init, level + 2); return;
+    case JN_STAT_EXIT: _jPrintExit(stmt->exit, level + 2); return;
+    case JN_STAT_INIT: _jPrintInit(stmt->init, level + 2); return;
 
     default: return;
     }
 }
 
-static inline void _jDebugProgramTree(const jNodeRoot* program) {
+static inline void _jDebugProgramTree(jNodeStatement* stmts) {
     fputs("\nPROGRAM TREE DEBUG PRINT:\n\n", stderr);
 
-    for (u64 i = 0; i < program->stmt_count; ++i) {
-        _jPrintStmt(&program->stmts[i], 0);
+    for (u64 i = 0; i < J_ARRAY_SIZE(stmts); ++i) {
+        _jPrintStmt(&stmts[i], 0);
         fputs("\n", stderr);
     }
 }

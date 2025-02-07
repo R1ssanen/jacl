@@ -3,6 +3,7 @@
 
 #include <string.h>
 
+#include "array.h"
 #include "error.h"
 #include "nodes.h"
 #include "tokens.h"
@@ -10,23 +11,22 @@
 
 typedef struct {
     jToken* tokens;
-    u64     curr_ptr;
+    u64     ptr;
 
     //  NOTE: TEMPORARY!
-    jNodeStmtInit vars[256];
-    u64           var_count;
+    jNodeStatInit* vars;
 } jParser;
 
 //  NOTE: TEMPORARY! MOVE STACK VARIABLES TO OWN STRUCT!!!
-static inline jNodeExpr* _jGetVarExpr(const jNodeExprId* id, const jParser* parser) {
-    for (u64 i = 0; i < parser->var_count; ++i) {
-        const jNodeStmtInit* var = &parser->vars[i];
-        if (var->id->hash == id->hash) { return var->expr; }
+static inline jNodeStatInit* _jFindVariable(const jNodeExprIdent* id, const jParser* parser) {
+    for (u64 i = 0; i < J_ARRAY_SIZE(parser->vars); ++i) {
+        jNodeStatInit* var = parser->vars + i;
+        if (var->id->hash == id->hash) { return var; }
     }
 
     return NULL;
 }
 
-b8 jParse(jParser* parser, jNodeStmt* stmts, jErrorHandler* err);
+b8 jParse(jParser* parser, jNodeStatement** stmts, jError** err);
 
 #endif

@@ -12,6 +12,7 @@
 #include "debug_ast.h"
 #include "error.h"
 #include "hash.h"
+#include "log.h"
 #include "mem.h"
 
 // other

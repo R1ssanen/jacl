@@ -11,26 +11,17 @@ typedef struct {
     enum j_token_t type;
 } jTokenPair;
 
-#define _J_TOKEN_PAIR(s, t)                                                                        \
-    (jTokenPair) { .str = s, .hash = 0, .type = t }
-
 jTokenPair _J_TOKEN_STRINGS[] = {
     // OPERATORS
-    // arithmetic
     (jTokenPair){ "+",    0, JT_OP_ADD      },
     (jTokenPair){ "-",    0, JT_OP_SUB      },
     (jTokenPair){ "*",    0, JT_OP_MUL      },
     (jTokenPair){ "/",    0, JT_OP_DIV      },
-
-    // logical
     (jTokenPair){ "=",    0, JT_OP_EQ       },
     (jTokenPair){ "<",    0, JT_OP_LESS     },
     (jTokenPair){ ">",    0, JT_OP_GREAT    },
     (jTokenPair){ "&",    0, JT_OP_AND      },
     (jTokenPair){ "|",    0, JT_OP_OR       },
-
-    // other
-    (jTokenPair){ ":=",   0, JT_OP_ASSIGN   },
 
     // SPECIAL CHARACTERS
     (jTokenPair){ "[",    0, JT_SPEC_LBRACK },
@@ -47,6 +38,7 @@ jTokenPair _J_TOKEN_STRINGS[] = {
 
     // KEYWORDS
     (jTokenPair){ "exit", 0, JT_KEY_EXIT    },
+    (jTokenPair){ "mut",  0, JT_KEY_MUT     },
 
     // ELEMENTARY TYPES
     (jTokenPair){ "b8",   0, JT_TYPE_B8     },
@@ -65,20 +57,17 @@ void jPrehashTokenStrings(void) {
 
     for (u64 i = 0; i < tokens; ++i) {
         jTokenPair* pair = _J_TOKEN_STRINGS + i;
-        if (!pair->str) { fputs("what\n", stderr); }
-        pair->hash = FNV_1A(pair->str, strlen(pair->str));
+        pair->hash       = FNV_1A((const u8*)pair->str, strlen(pair->str));
     }
 }
 
-enum j_token_t jTryGetToken(const char* str, u64 len) {
+enum j_token_t jTryGetToken(const u8* str, u64 len) {
     if (!str) { return JT_INVALID; }
 
     u64 hash = FNV_1A(str, len);
     if (hash == 0ULL) { return JT_INVALID; }
 
-    u64 tokens = sizeof(_J_TOKEN_STRINGS) / sizeof(jTokenPair);
-
-    for (u64 i = 0; i < tokens; ++i) {
+    for (u64 i = 0; i < sizeof(_J_TOKEN_STRINGS) / sizeof(jTokenPair); ++i) {
         jTokenPair* pair = _J_TOKEN_STRINGS + i;
         if (pair->hash == hash) { return pair->type; }
     }
@@ -98,41 +87,46 @@ const char* jGetTokenString(enum j_token_t type) {
 }
 
 void jPrintDebugToken(const jToken* token) {
-    if (token->type & JT_ID) {
-        fprintf(stderr, "(%lu, %lu) id: %s\n", token->line, token->col, token->str);
+    if (token->type == JT_EOF) {
+        fprintf(stderr, "(%lu, %lu) eof\n", token->line, token->column);
+    }
+
+    else if (token->type & JT_ID) {
+        fprintf(stderr, "(%lu, %lu) id: %s\n", token->line, token->column, token->data);
     }
 
     else if (token->type & JT_OP) {
         fprintf(
-            stderr, "(%lu, %lu) op: %s\n", token->line, token->col, jGetTokenString(token->type)
+            stderr, "(%lu, %lu) op: %s\n", token->line, token->column, jGetTokenString(token->type)
         );
     }
 
     else if (token->type & JT_SPEC) {
         fprintf(
-            stderr, "(%lu, %lu) spec: %s\n", token->line, token->col, jGetTokenString(token->type)
+            stderr, "(%lu, %lu) spec: %s\n", token->line, token->column,
+            jGetTokenString(token->type)
         );
     }
 
     else if (token->type & JT_TYPE) {
-        fprintf(stderr, "(%lu, %lu) type: %s\n", token->line, token->col, token->str);
+        fprintf(stderr, "(%lu, %lu) type: %s\n", token->line, token->column, token->data);
     }
 
     else if (token->type & JT_KEY) {
-        fprintf(stderr, "(%lu, %lu) key: %s\n", token->line, token->col, token->str);
+        fprintf(stderr, "(%lu, %lu) key: %s\n", token->line, token->column, token->data);
     }
 
     else if (token->type & JT_LIT) {
         if (token->type == JT_LIT_INT) {
-            fprintf(stderr, "(%lu, %lu) int: %lli\n", token->line, token->col, token->int_value);
+            fprintf(stderr, "(%lu, %lu) int: %s\n", token->line, token->column, token->data);
         } else if (token->type == JT_LIT_FLOAT) {
-            fprintf(stderr, "(%lu, %lu) float: %f\n", token->line, token->col, token->float_value);
+            fprintf(stderr, "(%lu, %lu) float: %s\n", token->line, token->column, token->data);
         } else {
-            fprintf(stderr, "(%lu, %lu) str: %s\n", token->line, token->col, token->str);
+            fprintf(stderr, "(%lu, %lu) str: %s\n", token->line, token->column, token->data);
         }
     }
 
     else {
-        fputs("unknown: none", stderr);
+        fputs("unknown: none\n", stderr);
     }
 }

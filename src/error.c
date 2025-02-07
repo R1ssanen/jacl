@@ -4,29 +4,21 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "array.h"
+
 const char* _J_ERROR_STRINGS[] = {
     [JE_SYNTAX]   = "syntax error",
     [JE_SEMANTIC] = "semantic error",
 };
 
-void jRaiseError(jErrorHandler* err, enum j_error_t type, const char* msg, u64 line, u64 column) {
-    err->errors[err->error_count++] = (jError){
-        .msg     = msg,
-        .msg_len = strlen(msg),
-        .line    = line,
-        .col     = column,
-        .type    = type,
-    };
-}
+void jPrintErrorStack(jError* err) {
+    fputs("ERROR STACK BACKTRACE:\n", stderr);
 
-void jPrintErrorStack(const jErrorHandler* err) {
-    fputs("error stack bactrace:\n", stderr);
-
-    for (u64 i = 0; i < err->error_count; ++i) {
-        const jError* error = &err->errors[i];
+    for (u64 i = 0; i < J_ARRAY_SIZE(err); ++i) {
+        jError* error = err + i;
         fprintf(
-            stderr, "\t%s: %s [%lu, %lu]\n", _J_ERROR_STRINGS[error->type], error->msg, error->line,
-            error->col
+            stderr, "\t%s: %s [%lu, %lu]\n", _J_ERROR_STRINGS[error->type], error->msg, 0,
+            0 // error->token->line, error->token->column
         );
     }
 }

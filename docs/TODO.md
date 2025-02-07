@@ -1,20 +1,20 @@
-# JACLang feature plan
+# JACLang Feature Plan
 
 - [ ] expressions
-  - [x] binary expressions
+  - [ ] binary expressions
     - [x] parentheses
-    - [x] order of operations
+    - [ ] order of operations
 
   - [ ] unary expressions
     - [ ] prefix
-      - [ ] increment
-      - [ ] decrement
       - [ ] negation (-)
       - [ ] positivisation (+)
       - [ ] logical not
-
+    
     - [ ] affix
       - [ ] array indexing
+      - [ ] increment
+      - [ ] decrement
 
 - [ ] stack variables
   - [x] definition
@@ -57,10 +57,10 @@
 
 - [ ] project file management
   - [ ] symbol visibility
-    - [ ] public
-    - [ ] private
+    - [ ] global
+    - [ ] local
 
-  - [ ] 'from {file} use *'
+  - [ ] 'from {file} use {namespace}::{*}'
     - [ ] wildcard import (all public symbols)
     - [ ] import specific public symbols by name
     - [ ] 'migrate' symbols under new namespace
