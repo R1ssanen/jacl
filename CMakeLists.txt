@@ -1,24 +1,18 @@
-cmake_minimum_required(VERSION 3.29..3.31)
-set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE)
-project(
-  jacl
-  VERSION 24.1.1
-  DESCRIPTION "Just Another Compiled Language"
-  LANGUAGES C)
+cmake_minimum_required (VERSION 3.30)
+project (jacl VERSION 25.0.1 DESCRIPTION "Just Another Compiled Language" LANGUAGES CXX)
 
-set(JACL_LIB ${PROJECT_NAME})
-add_subdirectory(src)
+add_executable (${PROJECT_NAME}
+	"src/main.cpp"
+	"src/lexer.cpp"
+)
 
-set(JACL_BIN jaclang)
-add_executable(${JACL_BIN} entry.c)
+target_compile_options (${PROJECT_NAME} PRIVATE -g -Wall -Wextra -Wpedantic -Wno-c++98-compat -Wno-c++98-compat-pedantic)
+target_include_directories (${PROJECT_NAME} PRIVATE "include")
 
-set_target_properties(
-  ${JACL_BIN}
-  PROPERTIES C_STANDARD 11
-             C_STANDARD_REQUIRED TRUE
-             LINKER_LANGUAGE C
-             VERSION ${PROJECT_VERSION})
-
-target_compile_options(${JACL_BIN} PRIVATE -g -Wall -Wextra -Wpedantic)
-target_link_libraries(${JACL_BIN} PRIVATE ${PROJECT_NAME})
+set_target_properties (${PROJECT_NAME} PROPERTIES
+	CXX_STANDARD 20
+	CXX_STANDARD_REQUIRED TRUE
+    VERSION ${PROJECT_VERSION}
+	EXPORT_COMPILE_COMMANDS TRUE
+)
 

@@ -2,7 +2,11 @@
 <b>bold_text</b> = token \
 [brackets] = production
 
-$$
+```
+
+```
+
+```math
 \begin{align}
 \text{[program]} &\to \text{[statement]}^*  \\
 \text{[statement]} &\to \begin{cases}
@@ -27,4 +31,4 @@ $$
     \textbf{str\_lit}
 \end{cases}  \\
 \end{align}
-$$
+```
