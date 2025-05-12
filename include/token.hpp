@@ -8,31 +8,30 @@
 
 #include "jacldefs.hpp"
 
+#define JACL_TYPE_WITHIN(type, class) ((type > TokenType::class) && (type < TokenType::END_##class))
+
 namespace jacl {
 
     enum class TokenType {
         INVALID = 0,
-        IDENTIFIER,
+        IDENTIFIER, // identifier
 
-        _BEGIN_DELIMIT, // delimiter
+        DELIMITER, // delimiter
+        DELIMITER_L_PAREN,
+        DELIMITER_R_PAREN,
+        DELIMITER_L_BRACE,
+        DELIMITER_R_BRACE,
+        DELIMITER_L_BRACKET,
+        DELIMITER_R_BRACKET,
+        DELIMITER_COLON,
+        DELIMITER_SEMICOLON,
+        END_DELIMITER,
 
-        DELIMIT_L_PAREN,
-        DELIMIT_R_PAREN,
-        DELIMIT_L_BRACE,
-        DELIMIT_R_BRACE,
-        DELIMIT_L_BRACKET,
-        DELIMIT_R_BRACKET,
-        DELIMIT_COLON,
-        DELIMIT_SEMICOLON,
-
-        _END_DELIMIT,
-        _BEGIN_KEYWORD, // keyword
-
+        KEYWORD, // keyword
         KEYWORD_RETURN,
         KEYWORD_GLOBAL,
 
-        _BEGIN_BUILTIN, // keyword - builtin type
-
+        BUILTIN, // keyword - builtin type
         BUILTIN_INT8,
         BUILTIN_INT32,
         BUILTIN_INT64,
@@ -42,118 +41,99 @@ namespace jacl {
         BUILTIN_FLOAT32,
         BUILTIN_FLOAT64,
         BUILTIN_BOOL8,
+        END_BUILTIN,
 
-        _END_BUILTIN,
-        _END_KEYWORD,
-        _BEGIN_LITERAL, // literals
+        QUALIFIER,
+        END_QUALIFIER,
 
+        END_KEYWORD,
+
+        LITERAL, // literals
         LITERAL_INT,
         LITERAL_FLOAT,
         LITERAL_STRING,
+        END_LITERAL,
 
-        _END_LITERAL,
-        _BEGIN_OPERATOR,   // operator
-        _BEGIN_ARITHMETIC, // operator - arithmetic
+        OPERATOR, // operator
+        OPERATOR_INDEX,
+        OPERATOR_RIGHT_ARROW,
+        OPERATOR_LEFT_ARROW,
+        OPERATOR_ASSIGN,
 
+        ARITHMETIC, // operator - arithmetic
         OPERATOR_PLUS,
         OPERATOR_MINUS,
         OPERATOR_STAR,
         OPERATOR_SLASH,
+        END_ARITHMETIC,
 
-        _END_ARITHMETIC,
-        _BEGIN_LOGICAL, // operator - logical
-
+        LOGICAL, // operator - logical
         OPERATOR_EXCLAMATION,
         OPERATOR_EQUALS,
         OPERATOR_AMPERSAND,
         OPERATOR_BAR,
         OPERATOR_LESSER,
         OPERATOR_GREATER,
+        END_LOGICAL,
 
-        _END_LOGICAL,
-        _BEGIN_SPECIAL, // operator - special
-
-        OPERATOR_RETURNS,
-        OPERATOR_INDEX,
-
-        _END_SPECIAL,
-        _END_OPERATOR,
+        END_OPERATOR,
     };
-
-    inline std::pair<std::optional<std::string>, TokenType> GetCharacterToken(char c) {
-        switch (c) {
-        case '(': return { {}, TokenType::DELIMIT_L_PAREN };
-        case ')': return { {}, TokenType::DELIMIT_R_PAREN };
-        case '{': return { {}, TokenType::DELIMIT_L_BRACE };
-        case '}': return { {}, TokenType::DELIMIT_R_BRACE };
-        case ':': return { {}, TokenType::DELIMIT_COLON };
-        case ';': return { {}, TokenType::DELIMIT_SEMICOLON };
-
-        case '+': return { {}, TokenType::OPERATOR_PLUS };
-        case '-': return { ">", TokenType::OPERATOR_MINUS };
-        case '*': return { {}, TokenType::OPERATOR_STAR };
-        case '/': return { {}, TokenType::OPERATOR_SLASH };
-        case '>': return { {}, TokenType::OPERATOR_GREATER };
-        case '<': return { {}, TokenType::OPERATOR_LESSER };
-
-        default: return { {}, TokenType::INVALID };
-        }
-    }
 
     class Token {
       public:
 
-        Token(std::string lexeme, TokenType type, u64 line, u64 column, u64 begin, u64 end)
-            : m_lexeme(lexeme), m_type(type), m_begin(begin), m_end(end) { }
+        Token(std::string lexeme, TokenType type, u64 begin, u64 end, u64 line, u64 column);
 
-        const std::string&    GetLexeme(void) const { return m_lexeme; }
+        Token() = default;
 
-        constexpr std::string GetTypeString(void) const {
+        const std::string&  GetLexeme(void) const { return m_lexeme; }
 
-            if (m_type == TokenType::INVALID) return "invalid";
+        const std::string&  GetDebugName(void) const { return m_debug_name; }
 
-            if (m_type == TokenType::IDENTIFIER) return "identifier";
+        std::pair<u64, u64> GetPosition(void) const { return { m_line, m_column }; }
 
-            if (TokenType::_BEGIN_KEYWORD < m_type && m_type < TokenType::_END_KEYWORD)
-                return "keyword";
+        TokenType           GetType(void) const { return m_type; }
 
-            if (TokenType::_BEGIN_LITERAL < m_type && m_type < TokenType::_END_LITERAL)
-                return "literal";
+        bool                WithinClass(TokenType _class) const { return m_class == _class; }
 
-            if (TokenType::_BEGIN_OPERATOR < m_type && m_type < TokenType::_END_OPERATOR)
-                return "operator";
+        bool                operator==(TokenType type) const { return m_type == type; }
 
-            if (TokenType::_BEGIN_DELIMIT < m_type && m_type < TokenType::_END_DELIMIT)
-                return "delimiter";
-
-            return "unknown";
-        }
+        bool                operator!=(TokenType type) const { return m_type != type; }
 
       private:
 
-        const std::string m_lexeme;
-        u64               m_begin, m_end;
-        u64               m_line, m_column;
-        TokenType         m_type;
+        std::string m_lexeme;
+        std::string m_debug_name;
+        u64         m_begin, m_end;
+        u64         m_line, m_column;
+        TokenType   m_type, m_class;
     };
+
+    std::pair<std::string, TokenType> GetSpecialToken(class Lexer& lexer);
 
 } // namespace jacl
 
 namespace jacl {
 
-    constexpr std::string_view DELIMITERS = ".,[]():;{}";
+    using namespace std::literals;
 
-    constexpr std::string_view OPERATORS  = "+-/*<>";
+#define JACL_SPECIALS                                                                              \
+    ".,:;[](){}"sv                                                                                 \
+    "+-/*<>"sv
 
-    constexpr std::string_view DIGITS     = "0123456789";
+#define JACL_DIGITS "0123456789"sv
 
-    constexpr std::string_view ALPHAS     = "_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+#define JACL_SEPARATED_DIGITS                                                                      \
+    JACL_DIGITS                                                                                    \
+    "_"sv
 
-    constexpr std::string_view ALPHANUMERICS =
-        "0123456789"
-        "_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+#define JACL_ALPHAS "_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"sv
 
-    const std::unordered_map<std::string_view, TokenType> KEYWORDS = {
+#define JACL_ALPHANUMERICS                                                                         \
+    JACL_DIGITS                                                                                    \
+    JACL_ALPHAS
+
+    const std::unordered_map<std::string, TokenType> KEYWORDS = {
         { "return", TokenType::KEYWORD_RETURN },
         { "global", TokenType::KEYWORD_GLOBAL },
         { "u32",    TokenType::BUILTIN_UINT32 },

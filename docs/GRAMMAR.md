@@ -1,34 +1,30 @@
-﻿# Formal grammar definition for JACLang
-<b>bold_text</b> = token \
-[brackets] = production
+﻿# Formal grammar
 
-```
-
-```
+## Production rules
 
 ```math
 \begin{align}
-\text{[program]} &\to \text{[statement]}^*  \\
-\text{[statement]} &\to \begin{cases}
-    \text{declaration} \space \text{:= [expr]};  &= \text{initialisation}  \\
-    \textbf{type:} \space \textbf{qual}^* \space \textbf{ident};  &= \text{declaration}  \\
-    \textbf{ident} := \text{[expr]};  &= \text{assignment}  \\
-    \text{[scope]};  \\
-\end{cases}  \\
-\text{[scope]} &\to \begin{cases}
-	\text{<\textbf{ident}>} \text{[scope]}  &= \text{namespace}  \\
-	\{ \text{[statement]}^* \}  \\
-\end{cases}  \\
-\text{[expr]} &\to \begin{cases}
-    \text{[expr]} \space \textbf{bin\_op} \space \text{[expr]}  \\
-    \text{[lit]}  \\
-    \textbf{ident}  &\to \text{[expr]}  \\
-    \textbf{f}"\{\text{[expr]}\}^*"  &\to \text{str\_lit}
-\end{cases} \\
-\text{[lit]} &\to \begin{cases}
-    \textbf{int\_lit}  \\
-    \textbf{float\_lit}  \\
-    \textbf{str\_lit}
-\end{cases}  \\
+
+\text{[Program]} &\to \text{[Statement]}* \\
+
+\text{[Statement]} &\to
+    \begin{cases}
+        \text{identifier() -> [QualifiedType] [Scope]} \\
+        \text{return [Literal]};
+    \end{cases} \\
+ 
+\text{[Scope]} &\to \{ \text{[Statement]}* \} \\
+
+\text{[QualifiedType]} &\to
+    \begin{cases}
+        \text{type: qualifier}* \\
+        \text{type}
+    \end{cases} \\
+
+\text{[Literal]} &\to
+    \begin{cases}
+        \text{integer}
+    \end{cases} \\
+
 \end{align}
 ```

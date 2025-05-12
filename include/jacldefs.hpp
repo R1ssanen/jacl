@@ -7,20 +7,20 @@
 
 namespace jacl {
 
-    using u8                        = std::uint8_t;
-    using u32                       = std::uint32_t;
-    using u64                       = std::uint64_t;
+    using u8                           = std::uint8_t;
+    using u32                          = std::uint32_t;
+    using u64                          = std::uint64_t;
 
-    using i8                        = std::int8_t;
-    using i32                       = std::int32_t;
-    using i64                       = std::int64_t;
+    using i8                           = std::int8_t;
+    using i32                          = std::int32_t;
+    using i64                          = std::int64_t;
 
-    using f32                       = float;
-    using f64                       = double;
+    using f32                          = float;
+    using f64                          = double;
 
-    template <typename T> using Ref = std::shared_ptr<T>;
+    template <typename T> using Owning = std::unique_ptr<T>;
 
-    constexpr u64 NOT_FOUND         = std::string::npos;
+    constexpr u64 NOT_FOUND            = std::string::npos;
 
 } // namespace jacl
 

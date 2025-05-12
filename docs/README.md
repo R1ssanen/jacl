@@ -58,7 +58,7 @@ as, i.e a <code>u32</code> must be EXACTLY 32 bits wide.
 
 | identifier | description |
 | :--------- | :---------- | 
-| b8 | primitive boolean type; 1 byte wide. |
+| bool | primitive boolean type; 1 byte wide. |
 | u8 | primitive unsigned byte type; 1 byte wide. |
 | u16 | primitive unsigned word type; 2 bytes wide. |
 | u32 | primitive unsigned double word type; 4 bytes wide. |
@@ -157,8 +157,7 @@ The ['length of'](#other_ops) operator must return the correct header-stored siz
 Array indexing must be bounds-checked in debug mode. \
 Negative indexes must be correctly wrapped around, according to the compile-time length of the array.
 
-Arrays are interpreted as an optionally recursive pairing of type and size inside \
-enclosed square brackets.
+Arrays are interpreted as an optionally recursive pairing of type and size inside enclosed square brackets.
 ```rust
 [u32, 4]: array1 := { 1, 2, 3, 4 };
 [[u8, 2], 2]: array2 := { { 1, 2 }, { 3, 4 } };

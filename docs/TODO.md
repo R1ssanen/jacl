@@ -1,4 +1,4 @@
-# JACLang Feature Plan
+# JACLang feature plan
 
 - [ ] expressions
   - [ ] binary expressions

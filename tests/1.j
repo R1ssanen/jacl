@@ -1,6 +1,6 @@
 
 -- single-line comment
 
-global main() -> u32: {
-	return 69;
+main() -> u32 {
+	return 16;
 }

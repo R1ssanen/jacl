@@ -1,6 +1,8 @@
 #ifndef JACL_LEXER_HPP_
 #define JACL_LEXER_HPP_
 
+#include <iostream>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -12,43 +14,40 @@ namespace jacl {
     class Lexer {
       public:
 
+        using Tokens = std::vector<Token>;
+
         Lexer(std::string source) : m_source(source), curr(source.front()) { }
 
-        std::vector<Token>& GetTokens() { return m_tokens; }
+        Tokens Tokenize(void);
 
-        bool                Tokenize(void);
+        bool   NotEOF(u64 ahead = 0) const { return (m_index + ahead) < m_source.size(); }
 
-        bool                NotEOF(void) const { return m_pos < m_source.size(); }
+        char   Peek(u64 ahead = 0) const;
 
-        char                Peek(u64 ahead = 0) const {
-            if (NotEOF()) return m_source[m_pos + ahead];
-            return '\0';
+        void   Next(u64 count = 1);
+
+        void   AppendToken(Tokens& tokens, std::string lexeme, TokenType type) {
+            tokens.emplace_back(lexeme, type, m_line, m_column, m_index, m_index + lexeme.size());
         }
 
-        void Next(u64 count = 1) {
-            for (u64 i = 0; i < count; ++i) {
-                char current = Peek();
-                if (!current) return;
+        template <typename... T> bool Matches(T... Args) {
+            char args[] = { Args... };
+            u64  count  = sizeof(args) / sizeof(char);
 
-                m_pos += 1;
-                curr = Peek();
+            for (u64 i = 0; i < count; ++i)
+                if (Peek(i) == args[i]) continue;
+                else
+                    return false;
 
-                if (current == '\n') {
-                    m_line += 1;
-                    m_column = 0;
-                }
-            }
-        }
-
-        void AppendToken(std::string lexeme, TokenType type) {
-            m_tokens.emplace_back(lexeme, type, m_line, m_column, m_pos, m_pos + lexeme.size());
+            Next(count);
+            return true;
         }
 
       private:
 
+        std::vector<Token> test;
         const std::string  m_source;
-        std::vector<Token> m_tokens;
-        u64                m_pos    = 0;
+        u64                m_index  = 0;
         u32                m_line   = 0;
         u32                m_column = 0;
         char               curr;
