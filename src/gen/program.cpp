@@ -4,7 +4,10 @@
 namespace jacl {
 
     bool NodeProgram::Generate(Generator& generator) const {
+        generator.EmitComment(Section::TEXT, "program begin");
+
         for (const auto& statement : m_statements) statement->Generate(generator);
+
         return true;
     }
 

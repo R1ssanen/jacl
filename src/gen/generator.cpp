@@ -3,13 +3,13 @@
 namespace jacl {
 
     Generator::Generator(void) {
-        Emit(Section::BSS, "section", ".bss\n");
-        Emit(Section::DATA, "section", ".data\n");
-        Emit(Section::RODATA, "section", ".rodata\n");
+        Emit(Section::BSS, "section", ".bss");
+        Emit(Section::DATA, "section", ".data");
+        Emit(Section::RODATA, "section", ".rodata");
 
-        Emit(Section::TEXT, "section", ".text\n");
+        Emit(Section::TEXT, "section", ".text");
         Emit(Section::TEXT, "global", "_start");
-        Emit(Section::TEXT, "_start:");
+        EmitLabel(Section::TEXT, "_start");
     }
 
     Generator::ASM Generator::Generate(NodeProgram& program) {
@@ -26,6 +26,18 @@ namespace jacl {
 
             return source;
         }
+    }
+
+    void Generator::EmitPrologue(void) {
+        EmitInstruction(Section::TEXT, "push", "rbp");
+        EmitInstruction(Section::TEXT, "mov", "rbp,", "rsp");
+        EmitInstruction(Section::TEXT, "sub", "rsp,", "16");
+    }
+
+    void Generator::EmitEpilogue(void) {
+        EmitInstruction(Section::TEXT, "add", "rsp,", "16");
+        EmitInstruction(Section::TEXT, "leave");
+        EmitInstruction(Section::TEXT, "ret");
     }
 
 } // namespace jacl

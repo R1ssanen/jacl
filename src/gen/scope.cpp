@@ -4,7 +4,7 @@
 namespace jacl {
 
     bool NodeScope::Generate(Generator& generator) const {
-        generator.Emit(Section::TEXT, "; scope");
+        generator.EmitComment(Section::TEXT, "scope");
 
         for (const auto& statement : m_statements) statement->Generate(generator);
 

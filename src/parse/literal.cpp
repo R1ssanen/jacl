@@ -9,18 +9,21 @@ namespace jacl {
         u64   mark    = parser.Mark();
 
         Token literal = parser.Peek();
+        if (!literal.WithinClass(TokenType::LITERAL)) return false;
         parser.Next();
+
+        m_string = literal.GetLexeme();
 
         switch (literal.GetType()) {
 
-        case TokenType::LITERAL_STRING: m_value = literal.GetLexeme(); return true;
+        case TokenType::LITERAL_STRING: return true;
 
         case TokenType::LITERAL_INT:
-            m_value = std::strtoll(literal.GetLexeme().c_str(), nullptr, 10);
+            m_value = std::strtoll(m_string.c_str(), nullptr, 10);
             return true;
 
         case TokenType::LITERAL_FLOAT:
-            m_value = std::strtod(literal.GetLexeme().c_str(), nullptr);
+            m_value = std::strtod(m_string.c_str(), nullptr);
             return true;
 
         default: parser.Rewind(mark); return false;
@@ -30,15 +33,7 @@ namespace jacl {
     void NodeLiteral::DebugPrint(u64 level) const {
         std::string indent(level, ' ');
 
-        std::clog << indent << GetDebugName() << ": ";
-
-        if (std::holds_alternative<i64>(m_value)) std::clog << std::get<i64>(m_value) << '\n';
-        else if (std::holds_alternative<f64>(m_value))
-            std::clog << std::get<f64>(m_value) << '\n';
-        else if (std::holds_alternative<std::string>(m_value))
-            std::clog << '"' << std::get<std::string>(m_value) << "\"\n";
-        else
-            std::clog << '\n';
+        std::clog << indent << GetDebugName() << ": " << m_string << '\n';
     }
 
 } // namespace jacl

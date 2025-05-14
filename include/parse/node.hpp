@@ -110,7 +110,8 @@ namespace jacl {
     class NodeLiteral : public Node {
       private:
 
-        std::variant<i64, f64, std::string> m_value;
+        std::variant<std::monostate, i64, f64> m_value;
+        std::string                            m_string;
 
         JACL_NODE_VIRTUALS(LITERAL)
     };

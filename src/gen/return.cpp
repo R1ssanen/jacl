@@ -4,7 +4,11 @@
 namespace jacl {
 
     bool NodeStatementReturn::Generate(Generator& generator) const {
-        generator.Emit(Section::TEXT, "; exit statement");
+        generator.EmitComment(Section::TEXT, "return statement");
+
+        m_value->Generate(generator);
+        generator.EmitEpilogue();
+
         return true;
     }
 

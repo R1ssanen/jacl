@@ -6,8 +6,10 @@
 namespace jacl {
 
     bool NodeStatementFuncDefinition::Generate(Generator& generator) const {
-        generator.Emit(Section::TEXT, "; function definition");
-        generator.Emit(Section::TEXT, std::format("{}:", m_identifier.GetLexeme()));
+        generator.EmitComment(Section::TEXT, "function definition");
+
+        generator.EmitLabel(Section::TEXT, m_identifier.GetLexeme().c_str());
+        generator.EmitPrologue();
 
         m_scope->Generate(generator);
 

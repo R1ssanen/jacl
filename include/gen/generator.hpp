@@ -1,9 +1,11 @@
 #ifndef JACL_GENERATOR_HPP_
 #define JACL_GENERATOR_HPP_
 
+#include <format>
 #include <optional>
 #include <string>
 
+#include "../jacldefs.hpp"
 #include "../parse/node.hpp"
 
 namespace jacl {
@@ -22,22 +24,42 @@ namespace jacl {
 
         Generator(void);
 
-        ASM                           Generate(NodeProgram& program);
+        ASM                              Generate(NodeProgram& program);
 
-        template <typename... T> void Emit(Section section, T... Args) {
-            std::string& sect = m_sections[section];
+        void                             EmitPrologue(void);
 
-            for (const auto& entry : { Args... }) {
-                sect.append(entry);
-                sect.append(1, '\t');
-            }
+        void                             EmitEpilogue(void);
 
-            sect.append(1, '\n');
+        template <typename... Args> void EmitLabel(Section section, Args&&... args) {
+            Emit(section, std::forward<Args>(args)..., ":");
+        }
+
+        template <typename... Args> void EmitInstruction(Section section, Args&&... args) {
+            Emit(section, "", std::forward<Args>(args)...);
+        }
+
+        template <typename... Args> void EmitComment(Section section, Args&&... args) {
+#if 1
+            Emit(section, "\n;", std::forward<Args>(args)...);
+#endif
         }
 
       private:
 
         std::unordered_map<Section, std::string> m_sections;
+        static constexpr u32                     m_column_width = 10;
+
+        template <typename... Args> void         Emit(Section section, Args&&... args) {
+            std::string& section_source = m_sections[section];
+            auto         entries        = std::array{ args... };
+
+            std::for_each(entries.begin(), entries.end() - 1, [&section_source](const auto& entry) {
+                section_source.append(std::format("{:<{}}", entry, Generator::m_column_width));
+            });
+
+            section_source.append(entries.back());
+            section_source.append(1, '\n');
+        }
     };
 
 } // namespace jacl
