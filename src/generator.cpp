@@ -1,4 +1,8 @@
-#include "gen/generator.hpp"
+#include "generator.hpp"
+
+#include <string>
+
+#include "lang/program.hpp"
 
 namespace jacl {
 
@@ -6,10 +10,7 @@ namespace jacl {
         Emit(Section::BSS, "section", ".bss");
         Emit(Section::DATA, "section", ".data");
         Emit(Section::RODATA, "section", ".rodata");
-
         Emit(Section::TEXT, "section", ".text");
-        Emit(Section::TEXT, "global", "_start");
-        EmitLabel(Section::TEXT, "_start");
     }
 
     Generator::ASM Generator::Generate(NodeProgram& program) {
@@ -26,18 +27,6 @@ namespace jacl {
 
             return source;
         }
-    }
-
-    void Generator::EmitPrologue(void) {
-        EmitInstruction(Section::TEXT, "push", "rbp");
-        EmitInstruction(Section::TEXT, "mov", "rbp,", "rsp");
-        EmitInstruction(Section::TEXT, "sub", "rsp,", "16");
-    }
-
-    void Generator::EmitEpilogue(void) {
-        EmitInstruction(Section::TEXT, "add", "rsp,", "16");
-        EmitInstruction(Section::TEXT, "leave");
-        EmitInstruction(Section::TEXT, "ret");
     }
 
 } // namespace jacl

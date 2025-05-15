@@ -1,27 +1,22 @@
-cmake_minimum_required (VERSION 3.30)
-project (jacl VERSION 25.0.1 DESCRIPTION "Just Another Compiled Language" LANGUAGES CXX)
+cmake_minimum_required (VERSION 4.0)
+project (jacl VERSION 25.0.2 DESCRIPTION "Just Another Compiled Language" LANGUAGES CXX)
 
 add_executable (${PROJECT_NAME}
 	"src/main.cpp"
 	"src/lexer.cpp"
 	"src/token.cpp"
-	
-	"src/parse/program.cpp"
-	"src/parse/parser.cpp"
-	"src/parse/statement.cpp"
-	"src/parse/qualified_type.cpp"
-	"src/parse/scope.cpp"
-	"src/parse/func_def.cpp"
-	"src/parse/return.cpp"
-	"src/parse/literal.cpp"
+	"src/parser.cpp"
+	"src/generator.cpp"
 
-	"src/gen/generator.cpp"
-	"src/gen/fun_def.cpp"
-	"src/gen/program.cpp"
-	"src/gen/literal.cpp"
-	"src/gen/scope.cpp"
-	"src/gen/statement.cpp"
-	"src/gen/return.cpp"
+	"src/lang/program.cpp"
+	"src/lang/statement.cpp"
+	"src/lang/qualified_type.cpp"
+	"src/lang/scope.cpp"
+	"src/lang/func_def.cpp"
+	"src/lang/return.cpp"
+	"src/lang/literal.cpp"
+	"src/lang/root_statement.cpp"
+	"src/lang/func_decl.cpp"
 )
 
 target_compile_options (${PROJECT_NAME} PRIVATE -g -Wall -Wextra -Wpedantic -Wno-c++98-compat -Wno-c++98-compat-pedantic)

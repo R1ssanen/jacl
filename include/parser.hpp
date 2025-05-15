@@ -5,9 +5,9 @@
 #include <optional>
 #include <vector>
 
-#include "../jacldefs.hpp"
-#include "../token.hpp"
-#include "node.hpp"
+#include "jacldefs.hpp"
+#include "lang/node.hpp"
+#include "token.hpp"
 
 namespace jacl {
 

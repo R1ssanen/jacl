@@ -2,24 +2,20 @@
     "version": 3,
     "configurePresets": [
         {
-            "name": "windows-base",
+            "name": "base",
             "hidden": true,
             "generator": "Ninja",
             "binaryDir": "${sourceDir}/bin",
             "installDir": "${sourceDir}/install/${presetName}",
             "cacheVariables": {
-                "CMAKE_CXX_COMPILER": "clang++.exe"
-            },
-            "condition": {
-                "type": "equals",
-                "lhs": "${hostSystemName}",
-                "rhs": "Windows"
+                "CMAKE_C_COMPILER": "clang",
+                "CMAKE_CXX_COMPILER": "clang++"
             }
         },
         {
             "name": "x64-debug",
             "displayName": "x64 Debug",
-            "inherits": "windows-base",
+            "inherits": "base",
             "architecture": {
                 "value": "x64",
                 "strategy": "external"

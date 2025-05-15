@@ -1,5 +1,6 @@
 #include "lexer.hpp"
 
+#include <algorithm>
 #include <string>
 
 #include "jacldefs.hpp"

@@ -3,10 +3,11 @@
 #include <sstream>
 #include <string>
 
-#include "gen/generator.hpp"
+#include "generator.hpp"
 #include "jacldefs.hpp"
+#include "lang/program.hpp"
 #include "lexer.hpp"
-#include "parse/parser.hpp"
+#include "parser.hpp"
 
 int main(int argc, char* argv[]) {
 
@@ -51,7 +52,7 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    program.value().DebugPrint(0);
+    program.value().DebugPrint();
 
     jacl::Generator      generator;
     jacl::Generator::ASM asm_source = generator.Generate(program.value());

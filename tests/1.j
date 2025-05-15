@@ -1,6 +1,8 @@
 
 -- single-line comment
 
-main() -> u32 {
+extern printf() -> u32;
+
+global main() -> u32 {
 	return 16;
 }

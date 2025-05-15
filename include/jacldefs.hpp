@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <memory>
 #include <string>
+#include <vector>
 
 namespace jacl {
 
@@ -18,7 +19,9 @@ namespace jacl {
     using f32                          = float;
     using f64                          = double;
 
-    template <typename T> using Owning = std::unique_ptr<T>;
+    template <typename T> using Ptr    = std::shared_ptr<T>;
+
+    template <typename T> using VecPtr = std::vector<Ptr<T>>;
 
     constexpr u64 NOT_FOUND            = std::string::npos;
 

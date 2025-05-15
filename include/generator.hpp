@@ -4,9 +4,10 @@
 #include <format>
 #include <optional>
 #include <string>
+#include <unordered_map>
 
-#include "../jacldefs.hpp"
-#include "../parse/node.hpp"
+#include "jacldefs.hpp"
+#include "lang/node.hpp"
 
 namespace jacl {
 
@@ -26,30 +27,19 @@ namespace jacl {
 
         ASM                              Generate(NodeProgram& program);
 
-        void                             EmitPrologue(void);
-
-        void                             EmitEpilogue(void);
-
-        template <typename... Args> void EmitLabel(Section section, Args&&... args) {
-            Emit(section, std::forward<Args>(args)..., ":");
+        template <typename... Args> void Emit(Section section, Args&&... args) {
+            EmitFormatted(section, "", std::forward<Args>(args)...);
         }
 
-        template <typename... Args> void EmitInstruction(Section section, Args&&... args) {
-            Emit(section, "", std::forward<Args>(args)...);
+        void EmitLabel(Section section, const char* label) {
+            m_sections[section].append(std::format("{}:\n", label));
         }
 
         template <typename... Args> void EmitComment(Section section, Args&&... args) {
-#if 1
-            Emit(section, "\n;", std::forward<Args>(args)...);
-#endif
+            EmitFormatted(section, "\n;", std::forward<Args>(args)...);
         }
 
-      private:
-
-        std::unordered_map<Section, std::string> m_sections;
-        static constexpr u32                     m_column_width = 10;
-
-        template <typename... Args> void         Emit(Section section, Args&&... args) {
+        template <typename... Args> void EmitFormatted(Section section, Args&&... args) {
             std::string& section_source = m_sections[section];
             auto         entries        = std::array{ args... };
 
@@ -60,6 +50,11 @@ namespace jacl {
             section_source.append(entries.back());
             section_source.append(1, '\n');
         }
+
+      private:
+
+        std::unordered_map<Section, std::string> m_sections;
+        static constexpr u32                     m_column_width = 10;
     };
 
 } // namespace jacl

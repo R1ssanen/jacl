@@ -1,8 +1,8 @@
-#include "parse/parser.hpp"
+#include "parser.hpp"
 
 #include <optional>
 
-#include "parse/node.hpp"
+#include "lang/program.hpp"
 
 namespace jacl {
 

@@ -29,7 +29,12 @@ namespace jacl {
 
         KEYWORD, // keyword
         KEYWORD_RETURN,
-        KEYWORD_GLOBAL,
+
+        QUALIFIER, // qualifier
+        QUALIFIER_GLOBAL,
+        QUALIFIER_LOCAL,
+        QUALIFIER_EXTERN,
+        END_QUALIFIER,
 
         BUILTIN, // keyword - builtin type
         BUILTIN_INT8,
@@ -42,9 +47,6 @@ namespace jacl {
         BUILTIN_FLOAT64,
         BUILTIN_BOOL8,
         END_BUILTIN,
-
-        QUALIFIER,
-        END_QUALIFIER,
 
         END_KEYWORD,
 
@@ -134,9 +136,13 @@ namespace jacl {
     JACL_ALPHAS
 
     const std::unordered_map<std::string, TokenType> KEYWORDS = {
-        { "return", TokenType::KEYWORD_RETURN },
-        { "global", TokenType::KEYWORD_GLOBAL },
-        { "u32",    TokenType::BUILTIN_UINT32 },
+        { "return", TokenType::KEYWORD_RETURN   },
+
+        { "u32",    TokenType::BUILTIN_UINT32   },
+
+        { "global", TokenType::QUALIFIER_GLOBAL },
+        { "local",  TokenType::QUALIFIER_LOCAL  },
+        { "extern", TokenType::QUALIFIER_EXTERN },
     };
 
 } // namespace jacl

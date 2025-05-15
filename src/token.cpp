@@ -26,6 +26,11 @@ namespace jacl {
                 m_debug_name = "Token::BUILTIN_TYPE";
             }
 
+            else if (JACL_TYPE_WITHIN(m_type, QUALIFIER)) {
+                m_class      = TokenType::QUALIFIER;
+                m_debug_name = "Token::QUALIFIER";
+            }
+
             else {
                 m_class      = TokenType::KEYWORD;
                 m_debug_name = "Token::KEYWORD";
