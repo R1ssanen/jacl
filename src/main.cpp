@@ -1,3 +1,4 @@
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <sstream>
@@ -7,21 +8,30 @@
 #include "jacldefs.hpp"
 #include "lang/program.hpp"
 #include "lexer.hpp"
+#include "log.hpp"
+#include "options.hpp"
 #include "parser.hpp"
 
 int main(int argc, char* argv[]) {
+    jacl::OptionParser opt(argc, argv);
 
-    if (argc < 2) {
-        std::cerr << "error: at least 1 source file required\n";
+    if (!opt.GroupSet("--files")) {
+        JERROR("No source files provided, exiting.");
         return 1;
     }
 
-    const char* filename = argv[1];
+    const auto&       source_files = opt.GetGroup("--files");
+
+    const std::string filepath     = source_files->front();
+    const std::string filename     = std::filesystem::path(filepath).stem();
+
+    JLOG("Compiling file '{}'...", filepath);
+
     std::string jacl_source;
     {
-        std::ifstream file(filename);
+        std::ifstream file(filepath);
         if (!file.is_open()) {
-            std::cerr << "error: could not open source file '" << filename << "'\n";
+            JERROR("Could not open source file '{}', exiting.", filepath);
             return 1;
         }
 
@@ -34,43 +44,66 @@ int main(int argc, char* argv[]) {
     jacl::Lexer::Tokens tokens = lexer.Tokenize();
 
     if (tokens.size() == 0) {
-        std::cerr << "error: could not tokenize file '" << filename << "'\n";
+        JERROR("Could not tokenize file '{}', exiting.", filepath);
         return 1;
     }
 
-#if 0
-    for (const jacl::Token& token : tokens)
-        std::clog << token.GetDebugName() << ": " << token.GetLexeme() << '\n';
-    std::clog << '\n';
-#endif
+    if (opt.OptionSet("--flags", "print-tokens")) {
+        for (const jacl::Token& token : tokens)
+            std::clog << token.GetDebugName() << ": " << token.GetLexeme() << '\n';
+        std::clog << '\n';
+    }
 
     jacl::Parser          parser(tokens);
     jacl::Parser::Program program = parser.Parse();
 
     if (!program.has_value()) {
-        std::cerr << "error: could not parse file '" << filename << "'\n";
+        JERROR("Could not parse file '{}', exiting.", filepath);
         return 1;
     }
 
-    program.value().DebugPrint();
+    if (opt.OptionSet("--flags", "print-ast")) program.value().DebugPrint();
 
     jacl::Generator      generator;
     jacl::Generator::ASM asm_source = generator.Generate(program.value());
 
     if (!asm_source.has_value()) {
-        std::cerr << "error: could not generate file '" << filename << "'\n";
+        JERROR("Could not generate file '{}', exiting.", filepath);
         return 1;
     }
 
+    std::string output_base_name;
+    if (opt.GroupSet("--dir")) {
+        const std::string                output_dir = std::string(opt.GetOption("--dir"));
+        std::filesystem::directory_entry output_dir_entry(output_dir);
+
+        if (!output_dir_entry.exists() || !output_dir_entry.is_directory()) {
+            JERROR("Invalid output directory specified by '--dir'.");
+            return 1;
+        }
+
+        output_base_name = output_dir + "/" + filename;
+    } else {
+        const std::string parent = std::filesystem::path(filepath).parent_path();
+        output_base_name         = parent + "/" + filename;
+    }
+
+    const std::string asm_filename = output_base_name + ".s";
     {
-        std::ofstream file("out.asm");
+        std::ofstream file(asm_filename);
         if (!file.is_open()) {
-            std::cerr << "error: could not open or create output file '" << "out.asm" << "'\n";
+            JERROR("Could not open or create output file '{}', exiting.", asm_filename);
             return 1;
         }
 
         file << asm_source.value();
     }
+
+    system(std::format("nasm -felf64 {} -o {}", asm_filename, output_base_name + ".o").c_str());
+
+    const auto& post_builds = opt.GetGroup("--post-build");
+    if (post_builds)
+        for (const auto& cmd : *post_builds) system(cmd.c_str());
 
     return 0;
 }

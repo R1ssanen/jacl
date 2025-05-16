@@ -3,6 +3,8 @@ compile_commands.json
 *.sh
 Testing/
 
-.vs
+.vs/
+.vscode/
 bin/
 build/
+tests/

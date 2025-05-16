@@ -1,5 +1,5 @@
 cmake_minimum_required (VERSION 4.0)
-project (jacl VERSION 25.0.2 DESCRIPTION "Just Another Compiled Language" LANGUAGES CXX)
+project (jac VERSION 25.0.2 DESCRIPTION "'Just Another Compiler' for 'Just Another Compiled Language'" LANGUAGES CXX)
 
 add_executable (${PROJECT_NAME}
 	"src/main.cpp"
@@ -7,6 +7,7 @@ add_executable (${PROJECT_NAME}
 	"src/token.cpp"
 	"src/parser.cpp"
 	"src/generator.cpp"
+	"src/options.cpp"
 
 	"src/lang/program.cpp"
 	"src/lang/statement.cpp"
