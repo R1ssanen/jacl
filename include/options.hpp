@@ -2,6 +2,7 @@
 #define JACL_OPTIONS_HPP_
 
 #include <optional>
+#include <span>
 #include <string_view>
 #include <unordered_map>
 #include <vector>
@@ -13,21 +14,23 @@ namespace jacl {
     class OptionParser {
       public:
 
-        using Group = std::vector<std::string>;
+        using Group     = std::vector<std::string>;
+        using GroupRef  = std::optional<std::span<const std::string>>;
+        using OptionRef = std::optional<std::string_view>;
 
         OptionParser(int argc, char** argv);
 
-        const Group*     GetGroup(const std::string& group) const;
+        GroupRef  GetGroup(const std::string& group_name) const;
 
-        std::string_view GetOption(const std::string& group, std::string_view option) const;
+        OptionRef GetOption(const std::string& group_name, std::string_view option_name) const;
 
-        std::string_view GetOption(const std::string& group) const;
+        OptionRef GetOption(const std::string& group_name) const;
 
-        bool             GroupSet(const std::string& group_name) const;
+        bool      CheckGroup(const std::string& group_name) const;
 
-        bool             OptionSet(const std::string& group, std::string_view option_name) const;
+        bool      CheckOption(const std::string& group_name, std::string_view option_name) const;
 
-        void             ListOptions(void) const;
+        void      ListOptions(void) const;
 
       private:
 

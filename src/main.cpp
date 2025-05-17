@@ -15,15 +15,14 @@
 int main(int argc, char* argv[]) {
     jacl::OptionParser opt(argc, argv);
 
-    if (!opt.GroupSet("--files")) {
+    const auto&        source_files = opt.GetGroup("--files");
+    if (!source_files) {
         JERROR("No source files provided, exiting.");
         return 1;
     }
 
-    const auto&       source_files = opt.GetGroup("--files");
-
-    const std::string filepath     = source_files->front();
-    const std::string filename     = std::filesystem::path(filepath).stem();
+    const std::string filepath = source_files->front();
+    const std::string filename = std::filesystem::path(filepath).stem();
 
     JLOG("Compiling file '{}'...", filepath);
 
@@ -48,7 +47,7 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    if (opt.OptionSet("--flags", "print-tokens")) {
+    if (opt.CheckOption("--flags", "print-tokens")) {
         for (const jacl::Token& token : tokens)
             std::clog << token.GetDebugName() << ": " << token.GetLexeme() << '\n';
         std::clog << '\n';
@@ -57,28 +56,47 @@ int main(int argc, char* argv[]) {
     jacl::Parser          parser(tokens);
     jacl::Parser::Program program = parser.Parse();
 
-    if (!program.has_value()) {
+    if (!program) {
         JERROR("Could not parse file '{}', exiting.", filepath);
         return 1;
     }
 
-    if (opt.OptionSet("--flags", "print-ast")) program.value().DebugPrint();
+    if (opt.CheckOption("--flags", "print-ast")) program->DebugPrint();
 
     jacl::Generator      generator;
     jacl::Generator::ASM asm_source = generator.Generate(program.value());
 
-    if (!asm_source.has_value()) {
+    if (!asm_source) {
         JERROR("Could not generate file '{}', exiting.", filepath);
         return 1;
     }
 
     std::string output_base_name;
-    if (opt.GroupSet("--dir")) {
-        const std::string                output_dir = std::string(opt.GetOption("--dir"));
+    if (opt.CheckGroup("--dir")) {
+        const std::string                output_dir = std::string(opt.GetOption("--dir").value());
         std::filesystem::directory_entry output_dir_entry(output_dir);
 
-        if (!output_dir_entry.exists() || !output_dir_entry.is_directory()) {
-            JERROR("Invalid output directory specified by '--dir'.");
+        if (!output_dir_entry.exists()) {
+            JERROR("Output directory '{}' does not exist.", output_dir);
+            std::string line;
+
+            for (;;) {
+                std::clog << "Create? (y/N)\n";
+                std::getline(std::cin, line);
+
+                if (line.size() == 0) continue;
+                if (std::tolower(line[0]) == 'y') break;
+                if (std::tolower(line[0]) == 'n') return 1;
+            }
+
+            std::filesystem::create_directory(output_dir);
+        }
+
+        else if (!output_dir_entry.is_directory()) {
+            JERROR(
+                "Invalid output directory specified by '--dir'. '{}' is not a directory.",
+                output_dir
+            );
             return 1;
         }
 
@@ -103,7 +121,7 @@ int main(int argc, char* argv[]) {
 
     const auto& post_builds = opt.GetGroup("--post-build");
     if (post_builds)
-        for (const auto& cmd : *post_builds) system(cmd.c_str());
+        for (const auto& cmd : post_builds.value()) system(cmd.c_str());
 
     return 0;
 }

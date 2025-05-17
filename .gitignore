@@ -1,10 +1,8 @@
-.cache/
-compile_commands.json
 *.sh
-Testing/
-
 .vs/
 .vscode/
 bin/
 build/
-tests/
+out/
+examples/*
+!*.j

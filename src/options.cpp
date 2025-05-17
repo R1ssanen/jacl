@@ -1,5 +1,6 @@
 #include "options.hpp"
 
+#include <span>
 #include <string_view>
 
 #include "jacldefs.hpp"
@@ -15,7 +16,7 @@ namespace jacl {
         return str.substr(begin, end - begin + 1);
     }
 
-    std::vector<std::string> Split(std::string_view str, std::string_view delimiter) {
+    static std::vector<std::string> Split(std::string_view str, std::string_view delimiter) {
         std::vector<std::string> tokens;
         u64                      last = 0;
         u64                      next = 0;
@@ -35,9 +36,8 @@ namespace jacl {
 
     OptionParser::OptionParser(int argc, char** argv) {
         for (int i = 1; i < argc; ++i) {
-            std::string_view token = argv[i];
 
-            Group            group = Split(token, "=,");
+            Group group = Split(argv[i], "=,");
             if (group.size() == 0) continue;
 
             std::string group_name = Trim(group.front(), " ");
@@ -50,46 +50,41 @@ namespace jacl {
         }
     }
 
-    const OptionParser::Group* OptionParser::GetGroup(const std::string& name) const {
+    OptionParser::GroupRef OptionParser::GetGroup(const std::string& name) const {
         auto group = m_groups.find(name);
-
-        if (group == m_groups.end()) return nullptr;
+        if (group == m_groups.end()) return std::nullopt;
         else
-            return &group->second;
+            return std::span(group->second);
     }
 
-    std::string_view
+    OptionParser::OptionRef
     OptionParser::GetOption(const std::string& group_name, std::string_view option_name) const {
-        auto group = GetGroup(group_name);
-        if (!group) return {};
+        GroupRef group = GetGroup(group_name);
+        if (!group) return std::nullopt;
 
         auto option = std::find(group->begin(), group->end(), option_name);
-
-        if (option == group->end()) return {};
+        if (option == group->end()) return std::nullopt;
         else
             return *option;
     }
 
-    std::string_view OptionParser::GetOption(const std::string& group_name) const {
-        auto group = GetGroup(group_name);
-        if (!group || group->size() == 0) return {};
-
+    OptionParser::OptionRef OptionParser::GetOption(const std::string& group_name) const {
+        GroupRef group = GetGroup(group_name);
+        if (!group || group->size() == 0) return std::nullopt;
         return group->front();
     }
 
-    bool OptionParser::GroupSet(const std::string& group_name) const {
-        auto group = GetGroup(group_name);
-        if (!group) return false;
-        else if (group->empty())
-            return false;
+    bool OptionParser::CheckGroup(const std::string& group_name) const {
+        GroupRef group = GetGroup(group_name);
+        if (!group || group->empty()) return false;
         else
             return true;
     }
 
     bool
-    OptionParser::OptionSet(const std::string& group_name, std::string_view option_name) const {
-        std::string_view option = GetOption(group_name, option_name);
-        if (!option.data()) return false;
+    OptionParser::CheckOption(const std::string& group_name, std::string_view option_name) const {
+        OptionRef option = GetOption(group_name, option_name);
+        if (!option) return false;
         else
             return true;
     }
