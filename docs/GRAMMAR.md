@@ -1,30 +1,36 @@
-﻿# Formal grammar definition for JACLang
-<b>bold_text</b> = token \
-[brackets] = production
+﻿# Formal grammar
+## Production rules
 
-$$
-\begin{align}
-\text{[program]} &\to \text{[statement]}^*  \\
-\text{[statement]} &\to \begin{cases}
-    \text{declaration} \space \text{:= [expr]};  &= \text{initialisation}  \\
-    \textbf{type:} \space \textbf{qual}^* \space \textbf{ident};  &= \text{declaration}  \\
-    \textbf{ident} := \text{[expr]};  &= \text{assignment}  \\
-    \text{[scope]};  \\
-\end{cases}  \\
-\text{[scope]} &\to \begin{cases}
-	\text{<\textbf{ident}>} \text{[scope]}  &= \text{namespace}  \\
-	\{ \text{[statement]}^* \}  \\
-\end{cases}  \\
-\text{[expr]} &\to \begin{cases}
-    \text{[expr]} \space \textbf{bin\_op} \space \text{[expr]}  \\
-    \text{[lit]}  \\
-    \textbf{ident}  &\to \text{[expr]}  \\
-    \textbf{f}"\{\text{[expr]}\}^*"  &\to \text{str\_lit}
-\end{cases} \\
-\text{[lit]} &\to \begin{cases}
-    \textbf{int\_lit}  \\
-    \textbf{float\_lit}  \\
-    \textbf{str\_lit}
-\end{cases}  \\
-\end{align}
-$$
+```ebnf
+unit := unit_statement*;
+
+unit_statement := function_definition
+        | function_declaration;
+
+function_definition := function_header block;
+
+function_declaration := EXTERN function_header ';';
+
+function_header := FUNC IDENTIFIER '(' declaration_list ')' ('->' type);
+
+declaration_list := variable_declaration (',' variable_declaration)*;
+
+variable_declaration := type ':' IDENTIFIER;
+
+block := '{' scope_statement* '}';
+
+statement_expr := IDENTIFIER '(' expression (',' expression)* ')';
+
+scope_statement := RETURN expression ';'
+        | statement_expr ';'
+        | block;
+
+type := '*' type
+        | INT32
+        | U8;
+
+expression := LITERAL
+        | IDENTIFIER
+        | '&' IDENTIFIER
+        | statement_expr;
+```

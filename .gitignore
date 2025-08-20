@@ -1,5 +1,8 @@
-.cache/
-build/
-compile_commands.json
 *.sh
-Testing/
+.vs/
+.vscode/
+bin/
+build/
+out/
+examples
+!*.j

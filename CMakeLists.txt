@@ -1,24 +1,23 @@
-cmake_minimum_required(VERSION 3.29..3.31)
-set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE)
-project(
-  jacl
-  VERSION 24.1.1
-  DESCRIPTION "Just Another Compiled Language"
-  LANGUAGES C)
+cmake_minimum_required(VERSION 3.30)
+project(jac LANGUAGES C)
 
-set(JACL_LIB ${PROJECT_NAME})
-add_subdirectory(src)
+add_executable(jac
+    "src/main.c"
+    "src/lex.c"
+    "src/ast.c"
+    "src/gen.c"
+)
 
-set(JACL_BIN jaclang)
-add_executable(${JACL_BIN} entry.c)
+target_include_directories(jac PRIVATE "include")
 
-set_target_properties(
-  ${JACL_BIN}
-  PROPERTIES C_STANDARD 11
-             C_STANDARD_REQUIRED TRUE
-             LINKER_LANGUAGE C
-             VERSION ${PROJECT_VERSION})
+set_target_properties(jac PROPERTIES
+    C_STANDARD 99
+    C_STANDARD_REQUIRED TRUE
+    C_EXTENSIONS DISABLED
+    EXPORT_COMPILE_COMMANDS TRUE
+)
 
-target_compile_options(${JACL_BIN} PRIVATE -g -Wall -Wextra -Wpedantic)
-target_link_libraries(${JACL_BIN} PRIVATE ${PROJECT_NAME})
-
+set(CMAKE_C_FLAGS_RELEASE -O3)
+set(CMAKE_C_FLAGS_DEBUG -g)
+target_compile_options(jac PRIVATE -Wall -pedantic -march=native )
+#target_link_options(jac PRIVATE -fsanitize=address)

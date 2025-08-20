@@ -1,8 +1,8 @@
-# JACLang Feature Plan
+# JACLang feature plan
 
 - [ ] expressions
   - [ ] binary expressions
-    - [x] parentheses
+    - [ ] parentheses
     - [ ] order of operations
 
   - [ ] unary expressions
@@ -17,7 +17,7 @@
       - [ ] decrement
 
 - [ ] stack variables
-  - [x] definition
+  - [ ] definition
   - [ ] assignment
 
 - [ ] scopes
@@ -32,10 +32,10 @@
   - [ ] while
   - [ ] for
 
-- [ ] functions
-  - [ ] definition
-  - [ ] calls
-  - [ ] return
+- [x] functions
+  - [x] definition
+  - [x] calls
+  - [x] return
 
 - [ ] macros
   - [ ] macro variables
