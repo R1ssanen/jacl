@@ -6,3 +6,5 @@ build/
 out/
 examples
 !*.j
+package-lock.json
+jacl-highlight

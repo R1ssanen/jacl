@@ -6,7 +6,8 @@
 typedef enum jac_token_kind {
     JAC_TOKEN_EOF = '\0',
     JAC_TOKEN_IDENTIFIER,
-    JAC_TOKEN_LITERAL,
+    JAC_TOKEN_INT_LITERAL,
+    JAC_TOKEN_STR_LITERAL,
 
     JAC_TOKEN_RETURN,
     JAC_TOKEN_EXTERN,
@@ -25,12 +26,20 @@ typedef enum jac_token_kind {
     JAC_TOKEN_MINUS     = '-',
     JAC_TOKEN_GT        = '>',
     JAC_TOKEN_AMPERSAND = '&',
+    JAC_TOKEN_EQUALS    = '=',
 } jac_token_kind;
 
+typedef struct jac_token_diagnostics {
+    const char* source_line;
+    size_t      length;
+    size_t      line;
+    size_t      column;
+} jac_token_diagnostics;
+
 typedef struct jac_token {
-    darray_t char* value;
-    size_t         pos, line, col;
-    jac_token_kind kind;
+    jac_token_diagnostics diagnostics;
+    darray_t char*        value;
+    jac_token_kind        kind;
 } jac_token;
 
 // NOTE: expects null-termination

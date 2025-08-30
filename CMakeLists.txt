@@ -5,7 +5,10 @@ add_executable(jac
     "src/main.c"
     "src/lex.c"
     "src/ast.c"
-    "src/gen.c"
+    #"src/gen.c"
+   # "src/ir.c"
+    "src/diagnostics.c"
+    "src/symbol.c"
 )
 
 target_include_directories(jac PRIVATE "include")
