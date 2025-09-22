@@ -6,18 +6,23 @@
 
 struct jac_token;
 
-typedef struct jac_symbol {
-    const struct jac_token* identifier;
-    jac_type                type;
-} jac_symbol;
+typedef struct jac_symbol jac_symbol;
+typedef struct jac_function jac_function;
 
-typedef struct jac_function {
-    jac_type                ret_type;
-    const struct jac_token* identifier;
-    const darray_t char*    mangled;
-    darray_t jac_symbol*    args;
-} jac_function;
+struct jac_symbol
+{
+    const struct jac_token *identifier;
+    jac_type type;
+};
 
-const char* jac_mangle_function_name(const struct jac_token* identifier, darray_t jac_symbol* args);
+struct jac_function
+{
+    jac_type ret_type;
+    const struct jac_token *identifier;
+    const darray_t char *mangled;
+    darray_t jac_symbol *args;
+};
+
+const char *jac_mangle_function_name(const struct jac_token *identifier, darray_t jac_symbol *args);
 
 #endif

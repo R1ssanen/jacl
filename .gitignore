@@ -1,9 +1,9 @@
 *.sh
-.vs/
-.vscode/
-bin/
-build/
-out/
+.vs
+.vscode
+bin
+build
+out
 examples
 !*.j
 package-lock.json

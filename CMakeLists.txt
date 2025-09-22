@@ -6,7 +6,7 @@ add_executable(jac
     "src/lex.c"
     "src/ast.c"
     #"src/gen.c"
-   # "src/ir.c"
+    "src/ir.c"
     "src/diagnostics.c"
     "src/symbol.c"
 )
